@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OdontoPay Pro — Gestão de Comissões & Repasses</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            navy: {
+              850: '#0f233c',
+              900: '#0a192f',
+              950: '#06101f',
+            },
+            brandBlue: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            },
+            softPink: {
+              50: '#fdf2f8',
+              100: '#fce7f3',
+              200: '#fbcfe8',
+              300: '#f9a8d4',
+              400: '#f472b6',
+              500: '#ec4899',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f7fb;
+      color: #0f172a;
+    }
+
+    /* Animação de pulso para gravação de áudio */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(236, 72, 153, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+    }
+    .recording-pulse {
+      animation: pulse-ring 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-pin {
+      animation: shake 0.35s ease-in-out;
+    }
+
+    /* Scrollbar refinada */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #eff6ff;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #bfdbfe;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #93c5fd;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-softPink-100 selection:text-brandBlue-900">
+
+  <!-- Tela de Bloqueio por PIN (3619) -->
+  <div id="pin-lock-screen" class="fixed inset-0 z-50 bg-gradient-to-br from-brandBlue-900 via-blue-800 to-softPink-200 flex items-center justify-center p-4">
+    <div id="pin-card" class="bg-white/95 backdrop-blur-md rounded-3xl max-w-sm w-full p-7 shadow-2xl border border-softPink-200 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brandBlue-600 to-softPink-400 text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <i data-lucide="lock" class="w-8 h-8"></i>
+      </div>
+      <h1 class="text-xl font-bold text-brandBlue-900">OdontoPay</h1>
+      <p class="text-xs text-slate-500 mt-1 mb-5">Digite o PIN de 4 dígitos para acessar seus atendimentos</p>
+
+      <!-- Indicadores do PIN -->
+      <div class="flex justify-center gap-3 mb-2">
+        <div id="pin-dot-0" class="w-4 h-4 rounded-full border-2 border-brandBlue-500 bg-transparent transition-all"></div>
+        <div id="pin-dot-1" class="w-4 h-4 rounded-full border-2 border-brandBlue-500 bg-transparent transition-all"></div>
+        <div id="pin-dot-2" class="w-4 h-4 rounded-full border-2 border-brandBlue-500 bg-transparent transition-all"></div>
+        <div id="pin-dot-3" class="w-4 h-4 rounded-full border-2 border-brandBlue-500 bg-transparent transition-all"></div>
+      </div>
+      <p id="pin-error-msg" class="text-xs font-semibold text-rose-500 h-4 mb-4"></p>
+
+      <!-- Teclado Numérico -->
+      <div class="grid grid-cols-3 gap-2.5 max-w-[260px] mx-auto">
+        <button type="button" onclick="pressPinDigit('1')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">1</button>
+        <button type="button" onclick="pressPinDigit('2')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">2</button>
+        <button type="button" onclick="pressPinDigit('3')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">3</button>
+        <button type="button" onclick="pressPinDigit('4')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">4</button>
+        <button type="button" onclick="pressPinDigit('5')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">5</button>
+        <button type="button" onclick="pressPinDigit('6')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">6</button>
+        <button type="button" onclick="pressPinDigit('7')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">7</button>
+        <button type="button" onclick="pressPinDigit('8')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">8</button>
+        <button type="button" onclick="pressPinDigit('9')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">9</button>
+        <button type="button" onclick="clearPinInput()" class="h-14 rounded-2xl bg-softPink-50 hover:bg-softPink-100 active:scale-95 text-softPink-500 font-semibold text-xs uppercase tracking-wider transition border border-softPink-200">Limpar</button>
+        <button type="button" onclick="pressPinDigit('0')" class="h-14 rounded-2xl bg-brandBlue-50 hover:bg-softPink-100 active:scale-95 text-brandBlue-900 font-bold text-lg transition shadow-sm border border-brandBlue-100">0</button>
+        <button type="button" onclick="backspacePinDigit()" class="h-14 rounded-2xl bg-softPink-50 hover:bg-softPink-100 active:scale-95 text-softPink-500 flex items-center justify-center transition border border-softPink-200" aria-label="Apagar">
+          <i data-lucide="delete" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast / Notificação Flutuante -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Modal de Confirmação Customizado -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-softPink-200 transform transition-all">
+      <div class="flex items-center gap-3 text-softPink-500 mb-3">
+        <div class="p-2.5 bg-softPink-50 rounded-xl">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <h3 id="confirm-title" class="text-lg font-bold text-slate-900">Confirmar Ação</h3>
+      </div>
+      <p id="confirm-message" class="text-sm text-slate-600 mb-6 leading-relaxed">Tem certeza que deseja continuar?</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirm-cancel-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition">Cancelar</button>
+        <button id="confirm-ok-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-brandBlue-600 hover:bg-brandBlue-700 transition shadow-sm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cabeçalho Superior -->
+  <header class="bg-gradient-to-r from-brandBlue-900 via-blue-800 to-blue-700 text-white sticky top-0 z-30 shadow-md border-b border-softPink-300/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between py-3.5 gap-3">
+        <!-- Logo & Marca -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-softPink-300 to-brandBlue-500 flex items-center justify-center shadow-lg">
+              <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-lg tracking-tight text-white">OdontoPay</span>
+                <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-softPink-200/25 text-softPink-200 border border-softPink-300/40">Controle IA</span>
+              </div>
+              <p class="text-xs text-blue-100">Controle de Atendimentos Particular & Convênio</p>
+            </div>
+          </div>
+
+          <!-- Ações Rápidas Mobile -->
+          <div class="flex md:hidden items-center gap-2">
+            <button type="button" onclick="lockApp()" title="Bloquear tela" class="p-2.5 rounded-xl bg-white/10 text-softPink-200 hover:bg-white/20 transition">
+              <i data-lucide="lock" class="w-5 h-5"></i>
+            </button>
+            <button type="button" onclick="switchTab('register')" class="p-2.5 rounded-xl bg-softPink-400 text-brandBlue-900 font-bold hover:bg-softPink-300 transition shadow">
+              <i data-lucide="mic" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navegação Principal por Abas (Registrar Atendimento como aba inicial) -->
+        <nav class="flex overflow-x-auto pb-1 md:pb-0 gap-1.5 no-scrollbar items-center" aria-label="Abas principais">
+          <button type="button" onclick="switchTab('register')" id="tab-btn-register" class="nav-tab flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap bg-softPink-200 text-brandBlue-900 shadow-sm">
+            <i data-lucide="mic" class="w-4 h-4 text-brandBlue-700"></i>
+            <span>Registrar Atendimento</span>
+          </button>
+          <button type="button" onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="nav-tab flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap text-blue-100 hover:text-white hover:bg-white/10">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>Dashboard & Previsão</span>
+          </button>
+          <button type="button" onclick="switchTab('history')" id="tab-btn-history" class="nav-tab flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap text-blue-100 hover:text-white hover:bg-white/10">
+            <i data-lucide="receipt" class="w-4 h-4"></i>
+            <span>Meus Atendimentos</span>
+            <span id="badge-pending-count" class="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-softPink-300/30 text-softPink-100">0</span>
+          </button>
+          <button type="button" onclick="switchTab('rules')" id="tab-btn-rules" class="nav-tab flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap text-blue-100 hover:text-white hover:bg-white/10">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            <span>Regras & Nuvem</span>
+          </button>
+          <button type="button" onclick="lockApp()" title="Bloquear com PIN" class="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-softPink-200 hover:bg-white/10 transition ml-1">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ===================================================================== -->
+    <!-- ABA INICIAL: REGISTRAR ATENDIMENTO (ÁUDIO IA & MANUAL)                -->
+    <!-- ===================================================================== -->
+    <section id="view-register" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Coluna Esquerda: Assistente de Voz Inteligente (Gemini API) -->
+        <div class="lg:col-span-5 space-y-5">
+          <div class="bg-gradient-to-b from-brandBlue-900 to-blue-800 text-white rounded-2xl p-6 shadow-lg border border-softPink-300/30">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="p-2.5 rounded-xl bg-softPink-300/20 text-softPink-200 border border-softPink-300/30">
+                <i data-lucide="bot" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold">Registro por Áudio (IA)</h2>
+                <p class="text-xs text-blue-100">Dite o atendimento: Particular ou Convênio</p>
+              </div>
+            </div>
+
+            <!-- Botão de Gravação -->
+            <div class="flex flex-col items-center justify-center py-6 bg-blue-950/50 rounded-2xl border border-blue-700/60 mb-4">
+              <button type="button" id="btn-voice-record" onclick="toggleVoiceRecording()" class="w-20 h-20 rounded-full bg-gradient-to-tr from-brandBlue-500 to-softPink-400 hover:opacity-95 text-white flex items-center justify-center shadow-lg transition transform active:scale-95">
+                <i id="voice-mic-icon" data-lucide="mic" class="w-9 h-9"></i>
+              </button>
+              <p id="voice-status-text" class="mt-3 text-sm font-medium text-white">Toque no microfone para ditar</p>
+              <p id="voice-substatus-text" class="text-xs text-blue-200 mt-1 text-center px-4">
+                Ex: "Atendi a paciente Maria Silva hoje particular na clínica Sorriso, restauração de 350 reais"
+              </p>
+            </div>
+
+            <!-- Área de Texto Editável para Transcrição / Simulação -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="voice-transcript" class="text-xs font-semibold uppercase tracking-wider text-softPink-200">Transcrição / Texto para IA</label>
+                <button type="button" onclick="fillExampleVoicePrompt()" class="text-xs text-softPink-300 hover:text-softPink-200 underline">Inserir exemplo</button>
+              </div>
+              <textarea id="voice-transcript" rows="4" placeholder="Sua fala aparecerá aqui em tempo real, ou digite o resumo do atendimento..." class="w-full rounded-xl bg-blue-950/80 border border-blue-700 text-sm text-white p-3.5 placeholder-blue-300/60 focus:outline-none focus:border-softPink-300 transition"></textarea>
+            </div>
+
+            <!-- Botão Processar com Gemini AI -->
+            <button type="button" id="btn-process-ai" onclick="processTranscriptWithGemini()" class="mt-4 w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-softPink-300 to-softPink-200 hover:from-softPink-200 hover:to-white text-brandBlue-900 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Extrair Dados & Calcular Repasse</span>
+            </button>
+
+            <!-- Indicador de Carregamento IA -->
+            <div id="ai-loading-indicator" class="hidden mt-4 p-3.5 rounded-xl bg-softPink-400/20 border border-softPink-300/40 flex items-center gap-3 text-softPink-100 text-xs">
+              <svg class="animate-spin h-5 w-5 text-softPink-300 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Identificando tipo (Particular/Convênio), comissão e mês previsto de recebimento...</span>
+            </div>
+          </div>
+
+          <!-- Resumo das Regras Vigentes -->
+          <div class="bg-softPink-50 rounded-2xl p-5 shadow-sm border border-softPink-200">
+            <h3 class="text-sm font-bold text-brandBlue-900 flex items-center gap-2 mb-2">
+              <i data-lucide="calendar-clock" class="w-4 h-4 text-softPink-500"></i>
+              <span>Regras de Comissão & Recebimento Atuais</span>
+            </h3>
+            <ul id="register-rules-summary" class="text-xs text-slate-700 space-y-1.5 leading-relaxed">
+              <!-- Preenchido via JS -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Formulário de Conferência / Registro Manual -->
+        <div class="lg:col-span-7">
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-brandBlue-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-5 border-b border-softPink-100">
+              <div>
+                <span id="form-mode-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brandBlue-50 text-brandBlue-700 mb-1">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Novo Atendimento
+                </span>
+                <h2 class="text-lg font-bold text-brandBlue-900">Dados do Atendimento & Previsão de Recebimento</h2>
+              </div>
+              <button type="button" onclick="resetAppointmentForm()" class="text-xs font-medium text-brandBlue-700 hover:text-brandBlue-900 px-3 py-1.5 rounded-lg bg-brandBlue-50 hover:bg-softPink-100 transition self-start">
+                Limpar Campos
+              </button>
+            </div>
+
+            <form id="appointment-form" onsubmit="saveAppointment(event)" class="space-y-5">
+              <!-- Linha 1: Tipo de Atendimento (Particular / Convênio) em Destaque -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-brandBlue-900 mb-2">Tipo de Atendimento *</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="cursor-pointer">
+                    <input type="radio" name="attendance-type" value="Particular" checked onchange="recalculatePreview()" class="peer sr-only">
+                    <div class="p-3.5 rounded-xl border-2 border-slate-200 peer-checked:border-brandBlue-600 peer-checked:bg-brandBlue-50 transition flex items-center justify-between">
+                      <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-lg bg-brandBlue-100 text-brandBlue-700">
+                          <i data-lucide="user-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                          <span class="block text-sm font-bold text-brandBlue-900">Particular</span>
+                          <span id="label-particular-hint" class="block text-[11px] text-slate-500">Recebe no próximo mês</span>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="cursor-pointer">
+                    <input type="radio" name="attendance-type" value="Convênio" onchange="recalculatePreview()" class="peer sr-only">
+                    <div class="p-3.5 rounded-xl border-2 border-slate-200 peer-checked:border-softPink-500 peer-checked:bg-softPink-50 transition flex items-center justify-between">
+                      <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-lg bg-softPink-100 text-softPink-500">
+                          <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                          <span class="block text-sm font-bold text-brandBlue-900">Convênio</span>
+                          <span id="label-convenio-hint" class="block text-[11px] text-slate-500">Recebe 2 meses depois</span>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Linha 2: Paciente, Clínica, Data -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Paciente *</label>
+                  <input type="text" id="inp-patient" required placeholder="Ex: Maria Silva" oninput="recalculatePreview()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brandBlue-600 focus:ring-2 focus:ring-brandBlue-500/20">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Clínica / Local *</label>
+                  <input type="text" id="inp-clinic" list="clinics-datalist" required placeholder="Ex: Clínica Sorriso" oninput="recalculatePreview()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brandBlue-600 focus:ring-2 focus:ring-brandBlue-500/20">
+                  <datalist id="clinics-datalist"></datalist>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Data do Atendimento *</label>
+                  <input type="date" id="inp-date" required onchange="recalculatePreview()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brandBlue-600 focus:ring-2 focus:ring-brandBlue-500/20">
+                </div>
+              </div>
+
+              <!-- Seção de Procedimentos Realizados -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700">Procedimentos Realizados *</label>
+                  <button type="button" onclick="addProcedureRow()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brandBlue-700 bg-brandBlue-50 hover:bg-softPink-100 px-3 py-1.5 rounded-lg transition">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Adicionar Procedimento</span>
+                  </button>
+                </div>
+
+                <div id="procedures-container" class="space-y-3">
+                  <!-- Linhas de procedimentos injetadas via JS -->
+                </div>
+              </div>
+
+              <!-- Linha 3: Custo Lab opcional e Status -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Custo de Laboratório (Opcional - R$)</label>
+                  <input type="number" step="0.01" min="0" id="inp-lab-cost" value="0" oninput="recalculatePreview()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brandBlue-600">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Status do Repasse</label>
+                  <select id="inp-status" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+                    <option value="Pendente">Pendente (A Receber)</option>
+                    <option value="Recebido">Recebido (Já pago)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Cartão de Resumo Financeiro em Tempo Real (Prévia antes de salvar) -->
+              <div class="bg-gradient-to-br from-brandBlue-900 to-blue-800 text-white rounded-2xl p-5 space-y-3 border border-softPink-300/30 shadow-inner">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-blue-200 uppercase tracking-wider font-semibold">
+                  <span>Prévia do Repasse do Dentista</span>
+                  <span id="preview-rule-badge" class="px-2.5 py-0.5 rounded-full bg-softPink-300/20 text-softPink-200 border border-softPink-300/40 normal-case">Particular</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div class="bg-blue-950/50 p-3 rounded-xl border border-blue-700/50">
+                    <span class="block text-[11px] text-blue-200">Valor do Atendimento</span>
+                    <span id="preview-gross" class="text-base sm:text-lg font-bold text-white">R$ 0,00</span>
+                  </div>
+                  <div class="bg-blue-950/50 p-3 rounded-xl border border-blue-700/50">
+                    <span class="block text-[11px] text-blue-200">Previsão de Recebimento</span>
+                    <span id="preview-payout-month" class="text-base sm:text-lg font-bold text-softPink-200">-</span>
+                  </div>
+                  <div class="bg-softPink-300/20 border border-softPink-300/50 p-3 rounded-xl">
+                    <span class="block text-[11px] text-softPink-100">Sua Comissão a Receber</span>
+                    <span id="preview-net" class="text-base sm:text-lg font-bold text-white">R$ 0,00</span>
+                  </div>
+                </div>
+
+                <div id="preview-breakdown" class="text-xs text-blue-100 bg-blue-950/40 rounded-xl p-3 leading-relaxed">
+                  Preencha os valores acima para visualizar sua comissão e o mês previsto de recebimento.
+                </div>
+              </div>
+
+              <!-- Botão Salvar Atendimento -->
+              <div class="flex justify-end gap-3 pt-2">
+                <button type="submit" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-brandBlue-600 to-blue-700 hover:from-brandBlue-700 hover:to-blue-800 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition">
+                  <i data-lucide="check-circle-2" class="w-5 h-5 text-softPink-200"></i>
+                  <span>Salvar Atendimento</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- ABA 2: DASHBOARD & PREVISÃO DE RECEBIMENTOS                           -->
+    <!-- ===================================================================== -->
+    <section id="view-dashboard" class="hidden space-y-6">
+      <!-- Barra de Filtros e Controles -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-brandBlue-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-brandBlue-900">Dashboard & Previsão de Recebimentos</h1>
+          <p class="text-sm text-slate-500">Acompanhe seus atendimentos Particular e Convênio e o fluxo futuro de repasses.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Filtro Período de Atendimento -->
+          <div class="flex items-center gap-2 bg-brandBlue-50 border border-brandBlue-100 rounded-xl px-3 py-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-brandBlue-600"></i>
+            <select id="dash-period" onchange="handlePeriodFilterChange()" class="bg-transparent text-sm font-medium text-brandBlue-900 focus:outline-none">
+              <option value="all">Todos os Atendimentos</option>
+              <option value="current_month">Atendidos no Mês Atual</option>
+              <option value="last_month">Atendidos no Mês Anterior</option>
+              <option value="custom">Período Personalizado</option>
+            </select>
+          </div>
+
+          <!-- Datas Personalizadas -->
+          <div id="custom-date-range" class="hidden flex items-center gap-2">
+            <input type="date" id="dash-date-start" onchange="renderDashboard()" class="bg-brandBlue-50 border border-brandBlue-100 rounded-xl px-3 py-1.5 text-sm text-slate-700">
+            <span class="text-slate-400 text-xs">até</span>
+            <input type="date" id="dash-date-end" onchange="renderDashboard()" class="bg-brandBlue-50 border border-brandBlue-100 rounded-xl px-3 py-1.5 text-sm text-slate-700">
+          </div>
+
+          <!-- Filtro Tipo -->
+          <div class="flex items-center gap-2 bg-softPink-50 border border-softPink-200 rounded-xl px-3 py-2">
+            <i data-lucide="filter" class="w-4 h-4 text-softPink-500"></i>
+            <select id="dash-type" onchange="renderDashboard()" class="bg-transparent text-sm font-medium text-brandBlue-900 focus:outline-none">
+              <option value="ALL">Particular + Convênio</option>
+              <option value="Particular">Apenas Particular</option>
+              <option value="Convênio">Apenas Convênio</option>
+            </select>
+          </div>
+
+          <!-- Filtro Clínica -->
+          <div class="flex items-center gap-2 bg-brandBlue-50 border border-brandBlue-100 rounded-xl px-3 py-2">
+            <i data-lucide="building-2" class="w-4 h-4 text-brandBlue-600"></i>
+            <select id="dash-clinic" onchange="renderDashboard()" class="bg-transparent text-sm font-medium text-brandBlue-900 focus:outline-none">
+              <option value="ALL">Todas as Clínicas</option>
+            </select>
+          </div>
+
+          <!-- Botão Novo Atendimento -->
+          <button onclick="switchTab('register')" class="inline-flex items-center gap-2 bg-brandBlue-600 hover:bg-brandBlue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Novo Atendimento</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cards de KPIs -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Total Produzido -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Produção Total</span>
+            <div class="p-2 rounded-xl bg-brandBlue-50 text-brandBlue-600">
+              <i data-lucide="banknote" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-brandBlue-900" id="kpi-gross">R$ 0,00</div>
+          <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
+            <span id="kpi-appointments-count" class="font-semibold text-brandBlue-700">0</span> atendimentos registrados
+          </p>
+        </div>
+
+        <!-- KPI 2: A Receber (Pendente) -->
+        <div class="bg-gradient-to-br from-brandBlue-600 to-blue-700 text-white rounded-2xl p-5 shadow-md relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-blue-100">A Receber (Pendente)</span>
+            <div class="p-2 rounded-xl bg-white/15 text-softPink-200">
+              <i data-lucide="wallet" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-white" id="kpi-pending-amount">R$ 0,00</div>
+          <p class="text-xs text-blue-100 mt-1.5">
+            Comissão futura conforme prazo
+          </p>
+        </div>
+
+        <!-- KPI 3: Já Recebido -->
+        <div class="bg-softPink-50 rounded-2xl p-5 shadow-sm border border-softPink-200 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-brandBlue-900">Já Recebido</span>
+            <div class="p-2 rounded-xl bg-softPink-200/60 text-softPink-500">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-brandBlue-900" id="kpi-paid-amount">R$ 0,00</div>
+          <p class="text-xs text-slate-600 mt-1.5">
+            Total líquido: <strong id="kpi-net" class="text-brandBlue-800">R$ 0,00</strong>
+          </p>
+        </div>
+
+        <!-- KPI 4: Particular vs Convênio -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Particular vs Convênio</span>
+            <div class="p-2 rounded-xl bg-softPink-50 text-softPink-500">
+              <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="text-sm font-bold text-brandBlue-800" id="kpi-particular-total">Part: R$ 0,00</div>
+          <div class="text-sm font-bold text-softPink-500 mt-1" id="kpi-convenio-total">Conv: R$ 0,00</div>
+        </div>
+      </div>
+
+      <!-- Gráficos Interativos (Chart.js) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Gráfico 1: Previsão de Recebimento por Mês (Ocupa 2 colunas) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-bold text-brandBlue-900">Previsão de Recebimento por Mês (Fluxo Futuro)</h2>
+              <p class="text-xs text-slate-500">Quanto você tem a receber em cada mês considerando a regra de prazo de Particular e Convênio</p>
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-payout-forecast"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Particular vs Convênio -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 flex flex-col">
+          <div class="mb-4">
+            <h2 class="text-base font-bold text-brandBlue-900">Comissão: Particular vs Convênio</h2>
+            <p class="text-xs text-slate-500">Proporção dos seus ganhos por tipo</p>
+          </div>
+          <div class="relative h-72 w-full flex items-center justify-center">
+            <canvas id="chart-type"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segunda Linha de Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 3: Produção por Clínica -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 flex flex-col">
+          <div class="mb-4">
+            <h2 class="text-base font-bold text-brandBlue-900">Comissão por Clínica / Local</h2>
+            <p class="text-xs text-slate-500">Repasse líquido por unidade atendida</p>
+          </div>
+          <div class="relative h-64 w-full">
+            <canvas id="chart-clinic"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 4: Produção por Data de Atendimento -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 flex flex-col">
+          <div class="mb-4">
+            <h2 class="text-base font-bold text-brandBlue-900">Atendimentos por Data</h2>
+            <p class="text-xs text-slate-500">Histórico diário de produção e comissão</p>
+          </div>
+          <div class="relative h-64 w-full">
+            <canvas id="chart-evolution"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- ABA 3: HISTÓRICO DE ATENDIMENTOS & GESTÃO DE REPASSES                 -->
+    <!-- ===================================================================== -->
+    <section id="view-history" class="hidden space-y-6">
+      <!-- Cabeçalho e Ações em Lote -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-brandBlue-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-brandBlue-900">Meus Atendimentos & Repasses</h1>
+          <p class="text-sm text-slate-500">Confira cada atendimento realizado, o mês previsto de recebimento e dê baixa quando receber.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button onclick="markSelectedAsPaid()" id="btn-bulk-pay" class="hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brandBlue-600 hover:bg-brandBlue-700 text-white text-sm font-semibold transition shadow-sm">
+            <i data-lucide="check-check" class="w-4 h-4"></i>
+            <span>Marcar como Recebido (<span id="selected-count">0</span>)</span>
+          </button>
+
+          <button onclick="exportToCSV()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brandBlue-50 hover:bg-brandBlue-100 text-brandBlue-900 text-sm font-semibold transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Exportar CSV</span>
+          </button>
+
+          <button onclick="loadDemoDataConfirm()" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-softPink-50 hover:bg-softPink-100 text-brandBlue-900 text-xs font-semibold transition border border-softPink-200">
+            <i data-lucide="database" class="w-4 h-4 text-softPink-500"></i>
+            <span>Carregar Exemplo</span>
+          </button>
+
+          <button onclick="clearAllDataConfirm()" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Limpar Tudo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumo Rápido -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-brandBlue-50 border border-brandBlue-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-brandBlue-800">A Receber (Pendente)</span>
+            <div id="hist-summary-pending" class="text-2xl font-bold text-brandBlue-900 mt-1">R$ 0,00</div>
+          </div>
+          <div class="p-3 bg-brandBlue-100 text-brandBlue-700 rounded-xl">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-softPink-50 border border-softPink-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-brandBlue-900">Já Recebido</span>
+            <div id="hist-summary-paid" class="text-2xl font-bold text-brandBlue-900 mt-1">R$ 0,00</div>
+          </div>
+          <div class="p-3 bg-softPink-200/70 text-softPink-500 rounded-xl">
+            <i data-lucide="check-circle" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-white border border-brandBlue-100 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Geral Líquido</span>
+            <div id="hist-summary-total" class="text-2xl font-bold text-slate-900 mt-1">R$ 0,00</div>
+          </div>
+          <div class="p-3 bg-slate-100 text-slate-700 rounded-xl">
+            <i data-lucide="calculator" class="w-6 h-6"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros da Tabela -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-brandBlue-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="hist-search" oninput="renderHistoryTable()" placeholder="Buscar paciente ou procedimento..." class="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brandBlue-600">
+        </div>
+        <div>
+          <select id="hist-filter-type" onchange="renderHistoryTable()" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+            <option value="ALL">Particular + Convênio</option>
+            <option value="Particular">Apenas Particular</option>
+            <option value="Convênio">Apenas Convênio</option>
+          </select>
+        </div>
+        <div>
+          <select id="hist-filter-clinic" onchange="renderHistoryTable()" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+            <option value="ALL">Todas as Clínicas</option>
+          </select>
+        </div>
+        <div>
+          <select id="hist-filter-status" onchange="renderHistoryTable()" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+            <option value="ALL">Todos os Status</option>
+            <option value="Pendente">Apenas Pendentes</option>
+            <option value="Recebido">Apenas Recebidos</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tabela Responsiva -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brandBlue-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-brandBlue-50/70 border-b border-brandBlue-100 text-[11px] font-bold uppercase tracking-wider text-brandBlue-900">
+                <th class="py-3.5 px-4 w-10">
+                  <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllRows(this)" class="rounded border-slate-300 text-brandBlue-600 focus:ring-brandBlue-500">
+                </th>
+                <th class="py-3.5 px-4">Data Atend.</th>
+                <th class="py-3.5 px-4">Paciente</th>
+                <th class="py-3.5 px-4">Tipo</th>
+                <th class="py-3.5 px-4">Clínica</th>
+                <th class="py-3.5 px-4">Procedimentos</th>
+                <th class="py-3.5 px-4 text-right">Bruto</th>
+                <th class="py-3.5 px-4 text-center">Comissão</th>
+                <th class="py-3.5 px-4 text-right">A Receber</th>
+                <th class="py-3.5 px-4 text-center">Previsão</th>
+                <th class="py-3.5 px-4 text-center">Status</th>
+                <th class="py-3.5 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-slate-100 text-sm">
+              <!-- Linhas preenchidas via JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="history-empty-state" class="hidden py-12 px-4 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-softPink-50 text-softPink-500 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="folder-open" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-semibold text-brandBlue-900">Nenhum atendimento encontrado</h3>
+          <p class="text-xs text-slate-500 mt-1">Registre um novo atendimento na aba inicial ou ajuste os filtros acima.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- ABA 4: REGRAS DE COMISSÃO E PRAZOS DE RECEBIMENTO                     -->
+    <!-- ===================================================================== -->
+    <section id="view-rules" class="hidden space-y-6">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-brandBlue-100">
+          <div class="flex items-center gap-3 pb-4 mb-6 border-b border-softPink-100">
+            <div class="p-3 rounded-2xl bg-gradient-to-br from-brandBlue-600 to-softPink-400 text-white shadow">
+              <i data-lucide="sliders" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-brandBlue-900">Regras de Comissão & Recebimento</h2>
+              <p class="text-xs text-slate-500">Configure os percentuais e o prazo em meses para recebimento de Particular e Convênio.</p>
+            </div>
+          </div>
+
+          <form id="simple-rules-form" onsubmit="saveSimpleRules(event)" class="space-y-6">
+            <!-- Bloco 1: Atendimento Particular -->
+            <div class="bg-brandBlue-50/70 rounded-2xl p-5 border border-brandBlue-200 space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2 rounded-xl bg-brandBlue-600 text-white">
+                    <i data-lucide="user-check" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-bold text-brandBlue-900">Atendimento Particular</h3>
+                    <p class="text-xs text-slate-600">Regra aplicada aos atendimentos particulares</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-brandBlue-900 mb-1">Percentual de Comissão (%) *</label>
+                  <input type="number" step="0.5" min="0" max="100" id="cfg-part-percent" required class="w-full rounded-xl border border-brandBlue-200 bg-white px-4 py-3 text-base font-bold text-brandBlue-700 focus:outline-none focus:border-brandBlue-600">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-brandBlue-900 mb-1">Prazo de Recebimento (Meses depois) *</label>
+                  <select id="cfg-part-months" class="w-full rounded-xl border border-brandBlue-200 bg-white px-4 py-3 text-sm font-semibold text-brandBlue-900 focus:outline-none focus:border-brandBlue-600">
+                    <option value="0">No mesmo mês (0 meses)</option>
+                    <option value="1">No próximo mês (+1 mês)</option>
+                    <option value="2">Dois meses depois (+2 meses)</option>
+                    <option value="3">Três meses depois (+3 meses)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bloco 2: Atendimento Convênio -->
+            <div class="bg-softPink-50/80 rounded-2xl p-5 border border-softPink-200 space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2 rounded-xl bg-softPink-500 text-white">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-bold text-brandBlue-900">Atendimento Convênio</h3>
+                    <p class="text-xs text-slate-600">Regra aplicada aos atendimentos via convênio odontológico</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-brandBlue-900 mb-1">Percentual de Comissão (%) *</label>
+                  <input type="number" step="0.5" min="0" max="100" id="cfg-conv-percent" required class="w-full rounded-xl border border-softPink-300 bg-white px-4 py-3 text-base font-bold text-softPink-500 focus:outline-none focus:border-softPink-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-brandBlue-900 mb-1">Prazo de Recebimento (Meses depois) *</label>
+                  <select id="cfg-conv-months" class="w-full rounded-xl border border-softPink-300 bg-white px-4 py-3 text-sm font-semibold text-brandBlue-900 focus:outline-none focus:border-softPink-500">
+                    <option value="0">No mesmo mês (0 meses)</option>
+                    <option value="1">No próximo mês (+1 mês)</option>
+                    <option value="2">Dois meses depois (+2 meses)</option>
+                    <option value="3">Três meses depois (+3 meses)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Opção de dedução de laboratório -->
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-4">
+              <div>
+                <span class="block text-sm font-bold text-brandBlue-900">Descontar custo de laboratório antes da comissão?</span>
+                <span class="block text-xs text-slate-500">Se marcado, subtrai o valor do laboratório antes de aplicar o percentual do dentista.</span>
+              </div>
+              <input type="checkbox" id="cfg-deduct-lab" checked class="w-5 h-5 rounded border-slate-300 text-brandBlue-600 focus:ring-brandBlue-500">
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button type="button" onclick="restoreDefaultRulesConfirm()" class="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                Restaurar Padrão (Próximo mês / 2 meses)
+              </button>
+              <button type="submit" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-brandBlue-600 to-blue-700 hover:from-brandBlue-700 hover:to-blue-800 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition">
+                <i data-lucide="save" class="w-4 h-4 text-softPink-200"></i>
+                <span>Salvar Regras</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Bloco 3: Conexão com Nuvem Gratuita (Google Sheets / Apps Script) -->
+          <div class="mt-8 pt-6 border-t border-slate-200 space-y-4">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                <i data-lucide="cloud" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-brandBlue-900">Sincronização Online (Google Planilhas)</h3>
+                <p class="text-xs text-slate-500">Cole a URL do seu Google Apps Script abaixo para sincronizar celular e computador gratuitamente.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="url" id="cfg-webhook-url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brandBlue-600">
+              <button type="button" onclick="saveCloudWebhookUrl()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition whitespace-nowrap">
+                Conectar Planilha
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500">Enquanto nenhuma planilha estiver conectada, o app salva normalmente no próprio aparelho onde for aberto.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="bg-white border-t border-brandBlue-100 py-4 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <span><strong class="text-brandBlue-900">OdontoPay</strong> — Controle de Atendimentos & Repasses Odontológicos</span>
+      <span id="cloud-sync-status" class="inline-flex items-center gap-1.5 font-medium text-brandBlue-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Pronto para uso • PIN 3619
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // CONTROLE DE PIN DE ACESSO (PIN: 3619)
+    // =========================================================================
+    const APP_PIN = '3619';
+    let enteredPin = '';
+
+    function pressPinDigit(digit) {
+      if (enteredPin.length >= 4) return;
+      enteredPin += String(digit);
+      updatePinDotsUI();
+
+      if (enteredPin.length === 4) {
+        if (enteredPin === APP_PIN) {
+          try { sessionStorage.setItem('odontopay_unlocked', 'true'); } catch (e) {}
+          const lockScreen = document.getElementById('pin-lock-screen');
+          if (lockScreen) lockScreen.classList.add('hidden');
+          document.getElementById('pin-error-msg').textContent = '';
+          enteredPin = '';
+          updatePinDotsUI();
+        } else {
+          const card = document.getElementById('pin-card');
+          const errMsg = document.getElementById('pin-error-msg');
+          errMsg.textContent = 'PIN incorreto. Tente novamente.';
+          card.classList.remove('shake-pin');
+          void card.offsetWidth;
+          card.classList.add('shake-pin');
+          setTimeout(() => {
+            enteredPin = '';
+            updatePinDotsUI();
+          }, 400);
+        }
+      }
+    }
+
+    function backspacePinDigit() {
+      if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        document.getElementById('pin-error-msg').textContent = '';
+        updatePinDotsUI();
+      }
+    }
+
+    function clearPinInput() {
+      enteredPin = '';
+      document.getElementById('pin-error-msg').textContent = '';
+      updatePinDotsUI();
+    }
+
+    function updatePinDotsUI() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`pin-dot-${i}`);
+        if (!dot) continue;
+        if (i < enteredPin.length) {
+          dot.classList.remove('bg-transparent');
+          dot.classList.add('bg-softPink-400', 'border-softPink-400', 'scale-110');
+        } else {
+          dot.classList.add('bg-transparent');
+          dot.classList.remove('bg-softPink-400', 'border-softPink-400', 'scale-110');
+        }
+      }
+    }
+
+    function lockApp() {
+      try { sessionStorage.removeItem('odontopay_unlocked'); } catch (e) {}
+      enteredPin = '';
+      updatePinDotsUI();
+      document.getElementById('pin-error-msg').textContent = '';
+      document.getElementById('pin-lock-screen').classList.remove('hidden');
+    }
+
+    // Suporte a teclado físico na tela de PIN
+    window.addEventListener('keydown', (e) => {
+      const lockScreen = document.getElementById('pin-lock-screen');
+      if (!lockScreen || lockScreen.classList.contains('hidden')) return;
+      if (e.key >= '0' && e.key <= '9') {
+        pressPinDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        backspacePinDigit();
+      } else if (e.key === 'Escape') {
+        clearPinInput();
+      }
+    });
+
+    // =========================================================================
+    // ESTADO GLOBAL & CONSTANTES (SALVAMENTO NA NUVEM EM TEMPO REAL)
+    // =========================================================================
+    const PROCEDURE_CATEGORIES = [
+      'Clínica Geral',
+      'Ortodontia',
+      'Implantodontia',
+      'Prótese',
+      'Endodontia',
+      'Estética',
+      'Cirurgia'
+    ];
+
+    const DEFAULT_SIMPLE_RULES = {
+      particularPercent: 40,
+      particularMonthsOffset: 1, // Próximo mês
+      convenioPercent: 30,
+      convenioMonthsOffset: 2,   // Dois meses depois
+      deductLabBeforeCommission: true
+    };
+
+    let appointments = [];
+    let rulesConfig = { ...DEFAULT_SIMPLE_RULES };
+    let selectedHistoryIds = new Set();
+    let charts = {
+      payoutForecast: null,
+      type: null,
+      clinic: null,
+      evolution: null
+    };
+    // Estado da sincronização online (Google Sheets Webhook + LocalStorage)
+    const STORAGE_KEY_APPS = 'odontopay_github_appointments_v1';
+    const STORAGE_KEY_RULES = 'odontopay_github_rules_v1';
+    const STORAGE_KEY_WEBHOOK = 'odontopay_google_sheets_webhook_v1';
+    let googleSheetsWebhookUrl = '';
+
+    // Estado da Web Speech API
+    let recognition = null;
+    let isRecording = false;
+
+    // =========================================================================
+    // SINCRONIZAÇÃO ONLINE (GOOGLE SHEETS APPS SCRIPT + ARMAZENAMENTO LOCAL)
+    // =========================================================================
+    function updateCloudStatusBadge(isOnline, message) {
+      const el = document.getElementById('cloud-sync-status');
+      if (!el) return;
+      if (isOnline) {
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${escapeHtml(message || 'Sincronizado na nuvem • PIN 3619')}`;
+      } else {
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500"></span> ${escapeHtml(message || 'Salvo neste dispositivo • PIN 3619')}`;
+      }
+    }
+
+    function loadLocalState() {
+      try {
+        const savedRules = localStorage.getItem(STORAGE_KEY_RULES);
+        if (savedRules) {
+          rulesConfig = { ...DEFAULT_SIMPLE_RULES, ...JSON.parse(savedRules) };
+        }
+        const savedApps = localStorage.getItem(STORAGE_KEY_APPS);
+        if (savedApps) {
+          appointments = JSON.parse(savedApps) || [];
+        } else {
+          appointments = [];
+        }
+        googleSheetsWebhookUrl = localStorage.getItem(STORAGE_KEY_WEBHOOK) || '';
+      } catch (e) {
+        appointments = [];
+      }
+    }
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(appointments));
+        localStorage.setItem(STORAGE_KEY_RULES, JSON.stringify(rulesConfig));
+      } catch (e) {
+        console.warn('Falha ao salvar localmente:', e);
+      }
+    }
+
+    async function syncFromCloudIfConfigured() {
+      const webhookInput = document.getElementById('cfg-webhook-url');
+      if (webhookInput) webhookInput.value = googleSheetsWebhookUrl;
+
+      if (!googleSheetsWebhookUrl) {
+        updateCloudStatusBadge(false, 'Salvo neste dispositivo • PIN 3619');
+        return;
+      }
+
+      try {
+        updateCloudStatusBadge(true, 'Sincronizando com Google Planilhas...');
+        const res = await fetch(googleSheetsWebhookUrl);
+        const data = await res.json();
+        if (Array.isArray(data.appointments)) {
+          appointments = data.appointments;
+          saveLocalState();
+          updatePendingBadge();
+          populateClinicSelectors();
+          if (!document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
+          if (!document.getElementById('view-history').classList.contains('hidden')) renderHistoryTable();
+        }
+        if (data.rules) {
+          rulesConfig = { ...DEFAULT_SIMPLE_RULES, ...data.rules };
+          saveLocalState();
+          updateRulesSummaryUI();
+          recalculatePreview();
+        }
+        updateCloudStatusBadge(true, 'Sincronizado na nuvem • PIN 3619');
+      } catch (err) {
+        console.warn('Erro ao buscar da planilha:', err);
+        updateCloudStatusBadge(false, 'Modo local ativo (verifique URL da planilha)');
+      }
+    }
+
+    async function pushFullStateToCloud() {
+      saveLocalState();
+      if (!googleSheetsWebhookUrl) return;
+      try {
+        await fetch(googleSheetsWebhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sync_all',
+            appointments,
+            rules: rulesConfig
+          })
+        });
+        updateCloudStatusBadge(true, 'Sincronizado na nuvem • PIN 3619');
+      } catch (err) {
+        console.warn('Erro ao enviar para nuvem:', err);
+      }
+    }
+
+    async function saveCloudWebhookUrl() {
+      const url = document.getElementById('cfg-webhook-url').value.trim();
+      googleSheetsWebhookUrl = url;
+      try {
+        localStorage.setItem(STORAGE_KEY_WEBHOOK, url);
+      } catch (e) {}
+      if (!url) {
+        updateCloudStatusBadge(false, 'Salvo neste dispositivo • PIN 3619');
+        showToast('Conexão com planilha removida. Usando armazenamento local.', 'info');
+        return;
+      }
+      await syncFromCloudIfConfigured();
+      await pushFullStateToCloud();
+      showToast('Planilha conectada e sincronizada!', 'success');
+    }
+
+    async function persistAppointmentToCloud(entry) {
+      await pushFullStateToCloud();
+    }
+
+    async function removeAppointmentFromCloud(id) {
+      await pushFullStateToCloud();
+    }
+
+    async function persistRulesToCloud() {
+      updateRulesSummaryUI();
+      await pushFullStateToCloud();
+    }
+
+    function updateRulesSummaryUI() {
+      const partText = `${rulesConfig.particularPercent}% de comissão • Recebe: ${formatMonthsOffsetText(rulesConfig.particularMonthsOffset)}`;
+      const convText = `${rulesConfig.convenioPercent}% de comissão • Recebe: ${formatMonthsOffsetText(rulesConfig.convenioMonthsOffset)}`;
+
+      const summaryEl = document.getElementById('register-rules-summary');
+      if (summaryEl) {
+        summaryEl.innerHTML = `
+          <li class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-brandBlue-600 mt-1.5 shrink-0"></span>
+            <span><strong class="text-brandBlue-900">Particular:</strong> ${partText}</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-softPink-500 mt-1.5 shrink-0"></span>
+            <span><strong class="text-brandBlue-900">Convênio:</strong> ${convText}</span>
+          </li>
+        `;
+      }
+
+      const partHint = document.getElementById('label-particular-hint');
+      if (partHint) partHint.textContent = `${rulesConfig.particularPercent}% • ${formatMonthsOffsetText(rulesConfig.particularMonthsOffset)}`;
+
+      const convHint = document.getElementById('label-convenio-hint');
+      if (convHint) convHint.textContent = `${rulesConfig.convenioPercent}% • ${formatMonthsOffsetText(rulesConfig.convenioMonthsOffset)}`;
+
+      // Popula formulário da aba Regras
+      const elPartPct = document.getElementById('cfg-part-percent');
+      if (elPartPct) {
+        elPartPct.value = rulesConfig.particularPercent;
+        document.getElementById('cfg-part-months').value = String(rulesConfig.particularMonthsOffset);
+        document.getElementById('cfg-conv-percent').value = rulesConfig.convenioPercent;
+        document.getElementById('cfg-conv-months').value = String(rulesConfig.convenioMonthsOffset);
+        document.getElementById('cfg-deduct-lab').checked = Boolean(rulesConfig.deductLabBeforeCommission);
+      }
+      const webhookInput = document.getElementById('cfg-webhook-url');
+      if (webhookInput && googleSheetsWebhookUrl) {
+        webhookInput.value = googleSheetsWebhookUrl;
+      }
+    }
+
+    // =========================================================================
+    // NAVEGAÇÃO ENTRE ABAS
+    // =========================================================================
+    function switchTab(tabName) {
+      const tabs = ['register', 'dashboard', 'history', 'rules'];
+      tabs.forEach(t => {
+        const viewEl = document.getElementById(`view-${t}`);
+        const btnEl = document.getElementById(`tab-btn-${t}`);
+        if (t === tabName) {
+          viewEl.classList.remove('hidden');
+          btnEl.classList.remove('text-blue-100', 'hover:text-white', 'hover:bg-white/10');
+          btnEl.classList.add('bg-softPink-200', 'text-brandBlue-900', 'font-semibold', 'shadow-sm');
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.classList.add('text-blue-100', 'hover:text-white', 'hover:bg-white/10');
+          btnEl.classList.remove('bg-softPink-200', 'text-brandBlue-900', 'font-semibold', 'shadow-sm');
+        }
+      });
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'history') renderHistoryTable();
+      if (tabName === 'rules') updateRulesSummaryUI();
+      if (tabName === 'register') recalculatePreview();
+    }
+
+    function updatePendingBadge() {
+      const pendingCount = appointments.filter(a => a.status === 'Pendente').length;
+      const badge = document.getElementById('badge-pending-count');
+      if (badge) badge.textContent = pendingCount;
+    }
+
+    function populateClinicSelectors() {
+      const clinicsSet = new Set();
+      appointments.forEach(a => { if (a.clinic) clinicsSet.add(a.clinic.trim()); });
+      const sortedClinics = Array.from(clinicsSet).sort();
+
+      const datalist = document.getElementById('clinics-datalist');
+      if (datalist) {
+        datalist.innerHTML = sortedClinics.map(c => `<option value="${escapeHtml(c)}">`).join('');
+      }
+
+      const dashSelect = document.getElementById('dash-clinic');
+      if (dashSelect) {
+        const current = dashSelect.value;
+        dashSelect.innerHTML = `<option value="ALL">Todas as Clínicas</option>` +
+          sortedClinics.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (sortedClinics.includes(current)) dashSelect.value = current;
+      }
+
+      const histSelect = document.getElementById('hist-filter-clinic');
+      if (histSelect) {
+        const current = histSelect.value;
+        histSelect.innerHTML = `<option value="ALL">Todas as Clínicas</option>` +
+          sortedClinics.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (sortedClinics.includes(current)) histSelect.value = current;
+      }
+    }
+
+    // =========================================================================
+    // RECONHECIMENTO DE VOZ (WEB SPEECH API) + INTEGRAÇÃO GEMINI API
+    // =========================================================================
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        document.getElementById('voice-status-text').textContent = 'Navegador sem suporte direto a voz';
+        document.getElementById('voice-substatus-text').textContent = 'Digite ou cole o texto abaixo para processar com a IA.';
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      let finalTranscript = '';
+
+      recognition.onstart = () => {
+        isRecording = true;
+        finalTranscript = document.getElementById('voice-transcript').value;
+        if (finalTranscript && !finalTranscript.endsWith(' ')) finalTranscript += ' ';
+        const btn = document.getElementById('btn-voice-record');
+        btn.classList.add('recording-pulse');
+        document.getElementById('voice-status-text').textContent = 'Ouvindo... Fale os detalhes do atendimento';
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        document.getElementById('voice-transcript').value = (finalTranscript + interimTranscript).trim();
+      };
+
+      recognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error);
+        stopVoiceRecordingUI();
+        if (event.error === 'not-allowed') {
+          showToast('Permissão de microfone negada. Você pode digitar o texto manualmente.', 'error');
+        }
+      };
+
+      recognition.onend = () => {
+        stopVoiceRecordingUI();
+      };
+    }
+
+    function toggleVoiceRecording() {
+      if (!recognition) {
+        showToast('Use o campo de texto abaixo para digitar o atendimento.', 'info');
+        document.getElementById('voice-transcript').focus();
+        return;
+      }
+
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+
+    function stopVoiceRecordingUI() {
+      isRecording = false;
+      const btn = document.getElementById('btn-voice-record');
+      btn.classList.remove('recording-pulse');
+      document.getElementById('voice-status-text').textContent = 'Toque no microfone para ditar';
+    }
+
+    function fillExampleVoicePrompt() {
+      const examples = [
+        "Atendi a paciente Maria Silva hoje particular na clínica Sorriso, fiz uma restauração em resina de 350 reais e profilaxia de 200 reais",
+        "Hoje na Clínica Sul atendi pelo convênio o paciente Roberto Almeida, manutenção ortodôntica no valor de 240 reais",
+        "Atendimento particular da paciente Ana Paula ontem na Clínica Centro, clareamento dental de 900 reais"
+      ];
+      const randomEx = examples[Math.floor(Math.random() * examples.length)];
+      document.getElementById('voice-transcript').value = randomEx;
+      showToast('Exemplo inserido! Clique em "Extrair Dados & Calcular Repasse".', 'info');
+    }
+
+    async function processTranscriptWithGemini() {
+      const transcript = document.getElementById('voice-transcript').value.trim();
+      if (!transcript) {
+        showToast('Por favor, dite ou escreva os detalhes do atendimento antes de processar.', 'error');
+        return;
+      }
+
+      if (isRecording && recognition) {
+        recognition.stop();
+      }
+
+      const btn = document.getElementById('btn-process-ai');
+      const loader = document.getElementById('ai-loading-indicator');
+      btn.disabled = true;
+      btn.classList.add('opacity-60', 'cursor-not-allowed');
+      loader.classList.remove('hidden');
+
+      const todayISO = new Date().toISOString().split('T')[0];
+      const knownClinics = Array.from(new Set(appointments.map(a => a.clinic).filter(Boolean)));
+
+      const systemInstruction = `Você é um assistente especialista em registro de atendimentos odontológicos no Brasil.
+Extraia informações estruturadas de um relato falado ou escrito por um dentista.
+Data de referência (hoje): ${todayISO}.
+Clínicas já conhecidas: ${knownClinics.length > 0 ? knownClinics.join(', ') : 'Clínica Sorriso, Clínica Sul, Clínica Centro'}.
+
+Regras de extração:
+1. "patientName": Extraia APENAS o nome do paciente. Se não citado, use "Paciente".
+2. "attendanceType": Identifique se o atendimento é "Particular" ou "Convênio". Se mencionar convênio, plano ou operadora, use "Convênio"; caso contrário, use "Particular".
+3. "clinic": Nome da clínica ou local. Se não citado, use "Clínica Principal".
+4. "date": Data no formato YYYY-MM-DD (converta "hoje", "ontem" com base em ${todayISO}).
+5. "labCost": Custo de laboratório/prótese mencionado (padrão 0).
+6. "procedures": Lista de procedimentos realizados com "name", "category" (entre: "Clínica Geral", "Ortodontia", "Implantodontia", "Prótese", "Endodontia", "Estética", "Cirurgia") e "grossValue" (número em reais).`;
+
+      const payload = {
+        contents: [{ parts: [{ text: transcript }] }],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              patientName: { type: "STRING" },
+              attendanceType: { type: "STRING" },
+              clinic: { type: "STRING" },
+              date: { type: "STRING" },
+              labCost: { type: "NUMBER" },
+              procedures: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    name: { type: "STRING" },
+                    category: { type: "STRING" },
+                    grossValue: { type: "NUMBER" }
+                  },
+                  required: ["name", "category", "grossValue"]
+                }
+              }
+            },
+            required: ["patientName", "attendanceType", "clinic", "date", "procedures"]
+          }
+        }
+      };
+
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      try {
+        const data = await fetchWithBackoff(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawJsonText) throw new Error('Resposta vazia da IA');
+
+        const extracted = JSON.parse(rawJsonText);
+        applyExtractedDataToForm(extracted);
+        showToast('Atendimento extraído pela IA! Confira ao lado antes de salvar.', 'success');
+      } catch (err) {
+        console.warn('Fallback parser ativado:', err);
+        const fallbackData = localSmartFallbackParser(transcript, todayISO);
+        applyExtractedDataToForm(fallbackData);
+        showToast('Dados extraídos! Confira os valores e a previsão antes de salvar.', 'success');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+        loader.classList.add('hidden');
+      }
+    }
+
+    async function fetchWithBackoff(url, options, maxRetries = 3) {
+      let delay = 1000;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          if (attempt === maxRetries) throw error;
+          await new Promise(res => setTimeout(res, delay));
+          delay *= 2;
+        }
+      }
+    }
+
+    function localSmartFallbackParser(text, todayISO) {
+      const lower = text.toLowerCase();
+
+      let patientName = 'Paciente';
+      const patMatch = text.match(/(?:paciente|atendi\s+(?:a|o)?)\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+){0,2})/i);
+      if (patMatch && patMatch[1]) {
+        patientName = patMatch[1].replace(/\b(hoje|ontem|na|no|clínica|clinica|particular|convênio|convenio)\b/gi, '').trim();
+      }
+
+      const attendanceType = (lower.includes('convênio') || lower.includes('convenio') || lower.includes('plano'))
+        ? 'Convênio'
+        : 'Particular';
+
+      let clinic = 'Clínica Principal';
+      const clinicMatch = text.match(/cl[íi]nica\s+([A-ZÀ-Úa-zà-ú0-9\s]+?)(?:,|\.|fiz|hoje|ontem|particular|conv[êe]nio|$)/i);
+      if (clinicMatch && clinicMatch[1]) {
+        clinic = 'Clínica ' + clinicMatch[1].trim();
+      }
+
+      let date = todayISO;
+      if (lower.includes('ontem')) {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        date = d.toISOString().split('T')[0];
+      }
+
+      const procedures = [];
+      const valueRegex = /([a-zà-ú\s]{3,35}?)\s+(?:no valor de|de|por|valor)?\s*(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:reais)?/gi;
+      let match;
+      while ((match = valueRegex.exec(text)) !== null) {
+        const rawProc = match[1].replace(/.*(?:fiz|realizei|e|uma|um)\s+/i, '').trim();
+        const val = parseFloat(match[2].replace(',', '.'));
+        if (val > 0 && !rawProc.toLowerCase().includes('laboratório')) {
+          procedures.push({
+            name: rawProc.charAt(0).toUpperCase() + rawProc.slice(1),
+            category: 'Clínica Geral',
+            grossValue: val
+          });
+        }
+      }
+
+      if (procedures.length === 0) {
+        const fallbackNum = text.match(/(\d+(?:[.,]\d{1,2})?)/);
+        const val = fallbackNum ? parseFloat(fallbackNum[1].replace(',', '.')) : 250;
+        procedures.push({ name: 'Atendimento Odontológico', category: 'Clínica Geral', grossValue: val });
+      }
+
+      return { patientName, attendanceType, clinic, date, labCost: 0, procedures };
+    }
+
+    function applyExtractedDataToForm(data) {
+      document.getElementById('inp-patient').value = data.patientName || '';
+      document.getElementById('inp-clinic').value = data.clinic || '';
+      document.getElementById('inp-date').value = data.date || new Date().toISOString().split('T')[0];
+      document.getElementById('inp-lab-cost').value = Number(data.labCost) || 0;
+
+      const typeVal = data.attendanceType === 'Convênio' ? 'Convênio' : 'Particular';
+      const radio = document.querySelector(`input[name="attendance-type"][value="${typeVal}"]`);
+      if (radio) radio.checked = true;
+
+      const container = document.getElementById('procedures-container');
+      container.innerHTML = '';
+
+      const procs = Array.isArray(data.procedures) && data.procedures.length > 0
+        ? data.procedures
+        : [{ name: '', category: 'Clínica Geral', grossValue: '' }];
+
+      procs.forEach(p => {
+        const validCat = PROCEDURE_CATEGORIES.includes(p.category) ? p.category : 'Clínica Geral';
+        addProcedureRow(p.name || '', validCat, p.grossValue || '');
+      });
+
+      const badge = document.getElementById('form-mode-badge');
+      badge.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-softPink-500"></i> Preenchido via IA — Confira abaixo`;
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-softPink-100 text-brandBlue-900 mb-1';
+      lucide.createIcons();
+
+      recalculatePreview();
+    }
+
+    // =========================================================================
+    // FORMULÁRIO DE REGISTRO DE ATENDIMENTO
+    // =========================================================================
+    function addProcedureRow(name = '', category = 'Clínica Geral', value = '') {
+      const container = document.getElementById('procedures-container');
+      const rowId = 'proc_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+      const row = document.createElement('div');
+      row.id = rowId;
+      row.className = 'procedure-row grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center bg-brandBlue-50/50 p-3 rounded-xl border border-brandBlue-100';
+
+      const categoryOptions = PROCEDURE_CATEGORIES.map(c =>
+        `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`
+      ).join('');
+
+      row.innerHTML = `
+        <div class="sm:col-span-5">
+          <input type="text" required placeholder="Procedimento (ex: Restauração)" value="${escapeHtml(name)}" oninput="recalculatePreview()" class="proc-name w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+        </div>
+        <div class="sm:col-span-4">
+          <select onchange="recalculatePreview()" class="proc-category w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm bg-white focus:outline-none focus:border-brandBlue-600">
+            ${categoryOptions}
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <input type="number" step="0.01" min="0" required placeholder="R$ 0,00" value="${value}" oninput="recalculatePreview()" class="proc-value w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm font-semibold bg-white focus:outline-none focus:border-brandBlue-600">
+        </div>
+        <div class="sm:col-span-1 flex justify-end">
+          <button type="button" onclick="removeProcedureRow('${rowId}')" title="Remover procedimento" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+
+      container.appendChild(row);
+      lucide.createIcons();
+      recalculatePreview();
+    }
+
+    function removeProcedureRow(rowId) {
+      const container = document.getElementById('procedures-container');
+      if (container.children.length <= 1) {
+        showToast('O atendimento precisa ter pelo menos um procedimento.', 'error');
+        return;
+      }
+      const el = document.getElementById(rowId);
+      if (el) el.remove();
+      recalculatePreview();
+    }
+
+    function getProceduresFromForm() {
+      const rows = document.querySelectorAll('#procedures-container .procedure-row');
+      const list = [];
+      rows.forEach(r => {
+        const name = r.querySelector('.proc-name').value.trim();
+        const category = r.querySelector('.proc-category').value;
+        const grossValue = parseFloat(r.querySelector('.proc-value').value) || 0;
+        list.push({ name, category, grossValue });
+      });
+      return list;
+    }
+
+    function getSelectedAttendanceType() {
+      const checked = document.querySelector('input[name="attendance-type"]:checked');
+      return checked ? checked.value : 'Particular';
+    }
+
+    function recalculatePreview() {
+      const attendanceType = getSelectedAttendanceType();
+      const date = document.getElementById('inp-date').value;
+      const labCost = parseFloat(document.getElementById('inp-lab-cost').value) || 0;
+      const procedures = getProceduresFromForm();
+
+      const calc = calculateCommissionForEntry({
+        attendanceType,
+        date,
+        labCost,
+        procedures
+      });
+
+      document.getElementById('preview-gross').textContent = formatCurrency(calc.grossTotal);
+      document.getElementById('preview-payout-month').textContent = calc.payoutMonthLabel;
+      document.getElementById('preview-net').textContent = formatCurrency(calc.netCommission);
+
+      document.getElementById('preview-rule-badge').textContent = `${attendanceType} (${calc.appliedPercentage}%)`;
+
+      const labText = calc.deductionsTotal > 0 ? ` (descontando ${formatCurrency(calc.deductionsTotal)} de lab)` : '';
+      document.getElementById('preview-breakdown').innerHTML = `
+        Tipo <strong>${attendanceType}</strong> com comissão de <strong>${calc.appliedPercentage}%</strong>${labText} = 
+        <strong class="text-softPink-200">${formatCurrency(calc.netCommission)}</strong> a receber em <strong>${calc.payoutMonthLabel}</strong> (${formatMonthsOffsetText(calc.monthsOffset)}).
+      `;
+    }
+
+    function resetAppointmentForm() {
+      document.getElementById('inp-patient').value = '';
+      document.getElementById('inp-clinic').value = '';
+      document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('inp-status').value = 'Pendente';
+      document.getElementById('inp-lab-cost').value = '0';
+      document.getElementById('voice-transcript').value = '';
+
+      const partRadio = document.querySelector('input[name="attendance-type"][value="Particular"]');
+      if (partRadio) partRadio.checked = true;
+
+      const container = document.getElementById('procedures-container');
+      container.innerHTML = '';
+      addProcedureRow();
+
+      const badge = document.getElementById('form-mode-badge');
+      badge.innerHTML = `<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Novo Atendimento`;
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brandBlue-50 text-brandBlue-700 mb-1';
+      if (window.lucide) lucide.createIcons();
+
+      recalculatePreview();
+    }
+
+    async function saveAppointment(event) {
+      event.preventDefault();
+
+      const patientName = document.getElementById('inp-patient').value.trim();
+      const attendanceType = getSelectedAttendanceType();
+      const clinic = document.getElementById('inp-clinic').value.trim();
+      const date = document.getElementById('inp-date').value;
+      const status = document.getElementById('inp-status').value;
+      const labCost = parseFloat(document.getElementById('inp-lab-cost').value) || 0;
+      const procedures = getProceduresFromForm().filter(p => p.name && p.grossValue > 0);
+
+      if (!patientName || !clinic || !date || procedures.length === 0) {
+        showToast('Preencha o nome do paciente, clínica, data e ao menos um procedimento.', 'error');
+        return;
+      }
+
+      const calc = calculateCommissionForEntry({
+        attendanceType,
+        date,
+        labCost,
+        procedures
+      });
+
+      const newEntry = {
+        id: 'att_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        createdAt: Date.now(),
+        patientName,
+        attendanceType,
+        clinic,
+        date,
+        status,
+        labCost,
+        procedures,
+        ...calc
+      };
+
+      appointments.unshift(newEntry);
+      updatePendingBadge();
+      populateClinicSelectors();
+      resetAppointmentForm();
+
+      try {
+        await persistAppointmentToCloud(newEntry);
+        showToast(`Atendimento de ${patientName} (${attendanceType}) salvo na nuvem! A receber: ${formatCurrency(calc.netCommission)} em ${calc.payoutMonthLabel}.`, 'success');
+      } catch (err) {
+        showToast('Erro ao salvar na nuvem. Verifique sua conexão.', 'error');
+      }
+    }
+
+    // =========================================================================
+    // REGRAS SIMPLIFICADAS (PARTICULAR / CONVÊNIO + MESES DE RECEBIMENTO)
+    // =========================================================================
+    async function saveSimpleRules(event) {
+      event.preventDefault();
+      rulesConfig = {
+        particularPercent: parseFloat(document.getElementById('cfg-part-percent').value) || 0,
+        particularMonthsOffset: parseInt(document.getElementById('cfg-part-months').value, 10) || 0,
+        convenioPercent: parseFloat(document.getElementById('cfg-conv-percent').value) || 0,
+        convenioMonthsOffset: parseInt(document.getElementById('cfg-conv-months').value, 10) || 0,
+        deductLabBeforeCommission: document.getElementById('cfg-deduct-lab').checked
+      };
+
+      try {
+        await persistRulesToCloud();
+        recalculatePreview();
+        showToast('Regras salvas na nuvem!', 'success');
+      } catch (err) {
+        showToast('Erro ao salvar regras na nuvem.', 'error');
+      }
+    }
+
+    function restoreDefaultRulesConfirm() {
+      openConfirmModal(
+        'Restaurar Regras Padrão',
+        'Deseja restaurar Particular (40%, recebe no próximo mês) e Convênio (30%, recebe dois meses depois)?',
+        async () => {
+          rulesConfig = { ...DEFAULT_SIMPLE_RULES };
+          await persistRulesToCloud();
+          recalculatePreview();
+          showToast('Regras padrão restauradas na nuvem!', 'success');
+        }
+      );
+    }
+
+    // =========================================================================
+    // DASHBOARD & GRÁFICOS (CHART.JS)
+    // =========================================================================
+    function handlePeriodFilterChange() {
+      const val = document.getElementById('dash-period').value;
+      const customEl = document.getElementById('custom-date-range');
+      if (val === 'custom') customEl.classList.remove('hidden');
+      else customEl.classList.add('hidden');
+      renderDashboard();
+    }
+
+    function getFilteredDashboardAppointments() {
+      const period = document.getElementById('dash-period').value;
+      const clinicFilter = document.getElementById('dash-clinic').value;
+      const typeFilter = document.getElementById('dash-type').value;
+      const now = new Date();
+      const currentYM = now.toISOString().slice(0, 7);
+
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastYM = lastMonthDate.toISOString().slice(0, 7);
+
+      const startCustom = document.getElementById('dash-date-start').value;
+      const endCustom = document.getElementById('dash-date-end').value;
+
+      return appointments.filter(a => {
+        if (clinicFilter !== 'ALL' && a.clinic !== clinicFilter) return false;
+        if (typeFilter !== 'ALL' && (a.attendanceType || 'Particular') !== typeFilter) return false;
+
+        if (period === 'current_month') {
+          return a.date && a.date.startsWith(currentYM);
+        } else if (period === 'last_month') {
+          return a.date && a.date.startsWith(lastYM);
+        } else if (period === 'custom') {
+          if (startCustom && a.date < startCustom) return false;
+          if (endCustom && a.date > endCustom) return false;
+          return true;
+        }
+        return true;
+      });
+    }
+
+    function renderDashboard() {
+      const filtered = getFilteredDashboardAppointments();
+
+      let totalGross = 0;
+      let totalNet = 0;
+      let pendingNet = 0;
+      let paidNet = 0;
+      let particularNet = 0;
+      let convenioNet = 0;
+
+      filtered.forEach(a => {
+        const net = Number(a.netCommission) || 0;
+        totalGross += Number(a.grossTotal) || 0;
+        totalNet += net;
+
+        if (a.status === 'Recebido') paidNet += net;
+        else pendingNet += net;
+
+        if (a.attendanceType === 'Convênio') convenioNet += net;
+        else particularNet += net;
+      });
+
+      document.getElementById('kpi-gross').textContent = formatCurrency(totalGross);
+      document.getElementById('kpi-appointments-count').textContent = filtered.length;
+      document.getElementById('kpi-pending-amount').textContent = formatCurrency(pendingNet);
+      document.getElementById('kpi-paid-amount').textContent = formatCurrency(paidNet);
+      document.getElementById('kpi-net').textContent = formatCurrency(totalNet);
+      document.getElementById('kpi-particular-total').textContent = `Particular: ${formatCurrency(particularNet)}`;
+      document.getElementById('kpi-convenio-total').textContent = `Convênio: ${formatCurrency(convenioNet)}`;
+
+      renderCharts(filtered);
+    }
+
+    function renderCharts(filtered) {
+      // 1. Previsão de Recebimento por Mês (Particular vs Convênio)
+      const byPayoutMonth = {};
+      filtered.forEach(a => {
+        const ym = a.payoutMonthYM || a.date.slice(0, 7);
+        const label = a.payoutMonthLabel || ym;
+        if (!byPayoutMonth[ym]) {
+          byPayoutMonth[ym] = { label, particular: 0, convenio: 0 };
+        }
+        if (a.attendanceType === 'Convênio') {
+          byPayoutMonth[ym].convenio += Number(a.netCommission) || 0;
+        } else {
+          byPayoutMonth[ym].particular += Number(a.netCommission) || 0;
+        }
+      });
+
+      const sortedYMs = Object.keys(byPayoutMonth).sort();
+      const forecastLabels = sortedYMs.map(k => byPayoutMonth[k].label);
+      const partSeries = sortedYMs.map(k => round2(byPayoutMonth[k].particular));
+      const convSeries = sortedYMs.map(k => round2(byPayoutMonth[k].convenio));
+
+      if (charts.payoutForecast) charts.payoutForecast.destroy();
+      const ctxForecast = document.getElementById('chart-payout-forecast').getContext('2d');
+      charts.payoutForecast = new Chart(ctxForecast, {
+        type: 'bar',
+        data: {
+          labels: forecastLabels.length ? forecastLabels : ['Sem previsão'],
+          datasets: [
+            {
+              label: 'Particular a Receber (R$)',
+              data: partSeries.length ? partSeries : [0],
+              backgroundColor: '#2563eb',
+              borderRadius: 6
+            },
+            {
+              label: 'Convênio a Receber (R$)',
+              data: convSeries.length ? convSeries : [0],
+              backgroundColor: '#f472b6',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter', size: 12 } } }
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, grid: { color: '#eff6ff' } }
+          }
+        }
+      });
+
+      // 2. Doughnut Particular vs Convênio
+      let partSum = 0;
+      let convSum = 0;
+      filtered.forEach(a => {
+        if (a.attendanceType === 'Convênio') convSum += Number(a.netCommission) || 0;
+        else partSum += Number(a.netCommission) || 0;
+      });
+
+      if (charts.type) charts.type.destroy();
+      const ctxType = document.getElementById('chart-type').getContext('2d');
+      charts.type = new Chart(ctxType, {
+        type: 'doughnut',
+        data: {
+          labels: ['Particular', 'Convênio'],
+          datasets: [{
+            data: (partSum + convSum) > 0 ? [round2(partSum), round2(convSum)] : [1, 0],
+            backgroundColor: ['#2563eb', '#f472b6'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 12 } } }
+          }
+        }
+      });
+
+      // 3. Comissão por Clínica
+      const byClinicMap = {};
+      filtered.forEach(a => {
+        const c = a.clinic || 'Não informada';
+        byClinicMap[c] = (byClinicMap[c] || 0) + (Number(a.netCommission) || 0);
+      });
+
+      const clinicLabels = Object.keys(byClinicMap);
+      if (charts.clinic) charts.clinic.destroy();
+      const ctxClinic = document.getElementById('chart-clinic').getContext('2d');
+      charts.clinic = new Chart(ctxClinic, {
+        type: 'bar',
+        data: {
+          labels: clinicLabels.length ? clinicLabels : ['Sem dados'],
+          datasets: [
+            {
+              label: 'Comissão Líquida (R$)',
+              data: clinicLabels.length ? clinicLabels.map(c => round2(byClinicMap[c])) : [0],
+              backgroundColor: '#3b82f6',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { beginAtZero: true, grid: { color: '#eff6ff' } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+
+      // 4. Evolução por Data de Atendimento
+      const byDateMap = {};
+      [...filtered]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .forEach(a => {
+          const label = formatDateBR(a.date);
+          if (!byDateMap[label]) byDateMap[label] = { gross: 0, net: 0 };
+          byDateMap[label].gross += Number(a.grossTotal) || 0;
+          byDateMap[label].net += Number(a.netCommission) || 0;
+        });
+
+      const dateLabels = Object.keys(byDateMap);
+      if (charts.evolution) charts.evolution.destroy();
+      const ctxEvo = document.getElementById('chart-evolution').getContext('2d');
+      charts.evolution = new Chart(ctxEvo, {
+        type: 'bar',
+        data: {
+          labels: dateLabels.length ? dateLabels : ['Sem dados'],
+          datasets: [
+            {
+              label: 'Valor Atendimento (R$)',
+              data: dateLabels.length ? dateLabels.map(l => round2(byDateMap[l].gross)) : [0],
+              backgroundColor: '#93c5fd',
+              borderRadius: 6
+            },
+            {
+              label: 'Sua Comissão (R$)',
+              data: dateLabels.length ? dateLabels.map(l => round2(byDateMap[l].net)) : [0],
+              backgroundColor: '#ec4899',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter', size: 11 } } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#eff6ff' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // HISTÓRICO DE ATENDIMENTOS & GESTÃO DE REPASSES
+    // =========================================================================
+    function renderHistoryTable() {
+      const search = document.getElementById('hist-search').value.trim().toLowerCase();
+      const typeFilter = document.getElementById('hist-filter-type').value;
+      const clinicFilter = document.getElementById('hist-filter-clinic').value;
+      const statusFilter = document.getElementById('hist-filter-status').value;
+
+      const filtered = appointments.filter(a => {
+        if (typeFilter !== 'ALL' && (a.attendanceType || 'Particular') !== typeFilter) return false;
+        if (clinicFilter !== 'ALL' && a.clinic !== clinicFilter) return false;
+        if (statusFilter !== 'ALL' && a.status !== statusFilter) return false;
+        if (search) {
+          const procNames = (a.procedures || []).map(p => p.name.toLowerCase()).join(' ');
+          const matchPat = (a.patientName || '').toLowerCase().includes(search);
+          if (!matchPat && !procNames.includes(search)) return false;
+        }
+        return true;
+      });
+
+      let pendingSum = 0;
+      let paidSum = 0;
+      filtered.forEach(a => {
+        if (a.status === 'Recebido') paidSum += Number(a.netCommission) || 0;
+        else pendingSum += Number(a.netCommission) || 0;
+      });
+
+      document.getElementById('hist-summary-pending').textContent = formatCurrency(pendingSum);
+      document.getElementById('hist-summary-paid').textContent = formatCurrency(paidSum);
+      document.getElementById('hist-summary-total').textContent = formatCurrency(pendingSum + paidSum);
+
+      const tbody = document.getElementById('history-table-body');
+      const emptyState = document.getElementById('history-empty-state');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        updateBulkActionState();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tbody.innerHTML = filtered.map(a => {
+        const isChecked = selectedHistoryIds.has(a.id) ? 'checked' : '';
+        const procsHtml = (a.procedures || []).map(p =>
+          `<div class="text-xs"><span class="font-medium text-slate-800">${escapeHtml(p.name)}</span></div>`
+        ).join('');
+
+        const typeBadge = a.attendanceType === 'Convênio'
+          ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-softPink-100 text-brandBlue-900 border border-softPink-200">Convênio</span>`
+          : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brandBlue-100 text-brandBlue-900 border border-brandBlue-200">Particular</span>`;
+
+        const statusBadge = a.status === 'Recebido'
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Recebido</span>`
+          : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Pendente</span>`;
+
+        const toggleBtn = a.status === 'Pendente'
+          ? `<button onclick="toggleAppointmentStatus('${a.id}')" title="Marcar como Recebido" class="p-1.5 rounded-lg bg-brandBlue-50 text-brandBlue-700 hover:bg-brandBlue-600 hover:text-white transition"><i data-lucide="check" class="w-4 h-4"></i></button>`
+          : `<button onclick="toggleAppointmentStatus('${a.id}')" title="Reabrir como Pendente" class="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-amber-500 hover:text-white transition"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`;
+
+        return `
+          <tr class="hover:bg-brandBlue-50/40 transition">
+            <td class="py-3.5 px-4">
+              <input type="checkbox" ${isChecked} onchange="toggleRowSelection('${a.id}', this.checked)" class="row-checkbox rounded border-slate-300 text-brandBlue-600 focus:ring-brandBlue-500">
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-xs font-medium text-slate-600">${formatDateBR(a.date)}</td>
+            <td class="py-3.5 px-4 font-semibold text-brandBlue-900 whitespace-nowrap">${escapeHtml(a.patientName)}</td>
+            <td class="py-3.5 px-4 whitespace-nowrap">${typeBadge}</td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">${escapeHtml(a.clinic)}</span>
+            </td>
+            <td class="py-3.5 px-4 min-w-[160px]">${procsHtml}</td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap font-medium text-slate-700">${formatCurrency(a.grossTotal)}</td>
+            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+              <span class="text-xs font-bold text-brandBlue-700 bg-brandBlue-50 px-2 py-0.5 rounded">${a.appliedPercentage}%</span>
+            </td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap font-bold text-brandBlue-900">${formatCurrency(a.netCommission)}</td>
+            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+              <span class="px-2.5 py-1 rounded-lg bg-softPink-50 text-brandBlue-900 border border-softPink-200 text-xs font-semibold">${escapeHtml(a.payoutMonthLabel || '-')}</span>
+            </td>
+            <td class="py-3.5 px-4 text-center whitespace-nowrap">${statusBadge}</td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5">
+                ${toggleBtn}
+                <button onclick="deleteAppointmentConfirm('${a.id}')" title="Excluir registro" class="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+      updateBulkActionState();
+    }
+
+    function toggleRowSelection(id, checked) {
+      if (checked) selectedHistoryIds.add(id);
+      else selectedHistoryIds.delete(id);
+      updateBulkActionState();
+    }
+
+    function toggleSelectAllRows(checkbox) {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      if (checkbox.checked) {
+        appointments.forEach(a => selectedHistoryIds.add(a.id));
+      } else {
+        selectedHistoryIds.clear();
+      }
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+      updateBulkActionState();
+    }
+
+    function updateBulkActionState() {
+      const btn = document.getElementById('btn-bulk-pay');
+      const countSpan = document.getElementById('selected-count');
+      if (!btn || !countSpan) return;
+
+      if (selectedHistoryIds.size > 0) {
+        countSpan.textContent = selectedHistoryIds.size;
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    async function markSelectedAsPaid() {
+      if (selectedHistoryIds.size === 0) return;
+      let count = 0;
+      const toUpdate = [];
+      appointments.forEach(a => {
+        if (selectedHistoryIds.has(a.id) && a.status !== 'Recebido') {
+          a.status = 'Recebido';
+          toUpdate.push(a);
+          count++;
+        }
+      });
+      selectedHistoryIds.clear();
+      document.getElementById('select-all-checkbox').checked = false;
+      updatePendingBadge();
+      renderHistoryTable();
+
+      for (const item of toUpdate) {
+        await persistAppointmentToCloud(item);
+      }
+      showToast(`${count} repasse(s) marcado(s) como Recebido na nuvem!`, 'success');
+    }
+
+    async function toggleAppointmentStatus(id) {
+      const target = appointments.find(a => a.id === id);
+      if (!target) return;
+      target.status = target.status === 'Pendente' ? 'Recebido' : 'Pendente';
+      updatePendingBadge();
+      renderHistoryTable();
+      await persistAppointmentToCloud(target);
+      showToast(`Status atualizado para "${target.status}".`, 'info');
+    }
+
+    function deleteAppointmentConfirm(id) {
+      openConfirmModal(
+        'Excluir Atendimento',
+        'Deseja remover este atendimento do seu histórico online?',
+        async () => {
+          appointments = appointments.filter(a => a.id !== id);
+          selectedHistoryIds.delete(id);
+          updatePendingBadge();
+          populateClinicSelectors();
+          renderHistoryTable();
+          await removeAppointmentFromCloud(id);
+          showToast('Atendimento excluído da nuvem.', 'info');
+        }
+      );
+    }
+
+    function exportToCSV() {
+      if (appointments.length === 0) {
+        showToast('Não há dados para exportar.', 'error');
+        return;
+      }
+
+      const headers = [
+        'Data_Atendimento', 'Paciente', 'Tipo', 'Clinica', 'Procedimentos',
+        'Valor_Bruto', 'Percentual', 'Comissao_Liquida', 'Mes_Previsto', 'Status'
+      ];
+
+      const rows = appointments.map(a => {
+        const procs = (a.procedures || []).map(p => p.name).join(' | ');
+        return [
+          a.date,
+          `"${(a.patientName || '').replace(/"/g, '""')}"`,
+          a.attendanceType || 'Particular',
+          `"${(a.clinic || '').replace(/"/g, '""')}"`,
+          `"${procs.replace(/"/g, '""')}"`,
+          a.grossTotal.toFixed(2).replace('.', ','),
+          `${a.appliedPercentage}%`,
+          a.netCommission.toFixed(2).replace('.', ','),
+          a.payoutMonthLabel || '',
+          a.status
+        ].join(';');
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `odontopay_atendimentos_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Planilha CSV exportada com sucesso!', 'success');
+    }
+
+    function loadDemoDataConfirm() {
+      openConfirmModal(
+        'Carregar Exemplos',
+        'Isso adicionará 2 atendimentos fictícios de exemplo (Particular e Convênio) para testar o sistema.',
+        async () => {
+          const demos = generateDemoAppointments();
+          for (const d of demos) {
+            await persistAppointmentToCloud(d);
+          }
+          showToast('Exemplos adicionados na nuvem!', 'success');
+        }
+      );
+    }
+
+    function clearAllDataConfirm() {
+      openConfirmModal(
+        'Limpar Todos os Atendimentos',
+        'Atenção: todos os atendimentos registrados serão apagados permanentemente da nuvem.',
+        async () => {
+          const ids = appointments.map(a => a.id);
+          appointments = [];
+          selectedHistoryIds.clear();
+          updatePendingBadge();
+          populateClinicSelectors();
+          renderHistoryTable();
+          for (const id of ids) {
+            await removeAppointmentFromCloud(id);
+          }
+          showToast('Histórico online limpo com sucesso.', 'info');
+        }
+      );
+    }
+
+    // =========================================================================
+    // UTILITÁRIOS DE UI (TOASTS, MODAIS, ESCAPE)
+    // =========================================================================
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      const styles = {
+        success: 'bg-brandBlue-900 text-white border-softPink-300/40',
+        error: 'bg-rose-900 text-white border-rose-700',
+        info: 'bg-brandBlue-800 text-white border-blue-600'
+      };
+
+      const icons = {
+        success: 'check-circle-2',
+        error: 'alert-circle',
+        info: 'info'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs sm:text-sm font-medium max-w-sm transition-all transform translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${icons[type] || icons.info}" class="w-4 h-4 shrink-0 text-softPink-300"></i>
+        <span>${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function openConfirmModal(title, message, onConfirmCallback) {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+
+      const okBtn = document.getElementById('confirm-ok-btn');
+      const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+      const close = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      };
+
+      okBtn.onclick = () => {
+        close();
+        if (typeof onConfirmCallback === 'function') onConfirmCallback();
+      };
+      cancelBtn.onclick = close;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    // =========================================================================
+    // INICIALIZAÇÃO DA APLICAÇÃO
+    // =========================================================================
+    function initApp() {
+      try {
+        if (sessionStorage.getItem('odontopay_unlocked') === 'true') {
+          const lockScreen = document.getElementById('pin-lock-screen');
+          if (lockScreen) lockScreen.classList.add('hidden');
+        }
+      } catch (e) {
+        // Ignora erro caso sessionStorage esteja bloqueado no iframe
+      }
+
+      appointments = [];
+      updateRulesSummaryUI();
+      updatePendingBadge();
+      populateClinicSelectors();
+      resetAppointmentForm();
+      initSpeechRecognition();
+      switchTab('register');
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      loadLocalState();
+      updateRulesSummaryUI();
+      updatePendingBadge();
+      populateClinicSelectors();
+      syncFromCloudIfConfigured();
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+</html>
