@@ -1,0 +1,18 @@
+{
+  "name": "OdontoPay - Gestão Odontológica",
+  "short_name": "OdontoPay",
+  "description": "Controle de atendimentos Particular e Convênio, comissões e previsão de repasses",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eff6ff",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%23f472b6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='url(%23g)'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='36' stroke-linecap='round' stroke-linejoin='round' d='M176 264l52 52 108-108M256 88c58 46 136 52 136 52v116c0 104-68 176-136 204-68-28-136-100-136-204V140s78-6 136-52z'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
