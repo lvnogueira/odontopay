@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>OdontoPay - Gestão de Atendimentos & Repasses</title>
+  <title>OdontoPay v2 - Gestão de Atendimentos & Repasses</title>
   <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -147,7 +147,10 @@
             </svg>
           </div>
           <div>
-            <h1 class="text-lg font-extrabold text-brandBlue-900 leading-tight">OdontoPay</h1>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-lg font-extrabold text-brandBlue-900 leading-tight">OdontoPay</h1>
+              <span class="px-1.5 py-0.5 rounded-md bg-brandBlue-100 text-brandBlue-700 text-[10px] font-extrabold">v2</span>
+            </div>
             <div class="flex items-center gap-1.5">
               <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
               <span id="sync-label" class="text-[11px] font-medium text-slate-500">Conectando...</span>
@@ -189,7 +192,7 @@
     <!-- Conteúdo Principal -->
     <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
 
-      <!-- ==================== ABA 1: REGISTRAR ATENDIMENTO (INICIAL) ==================== -->
+      <!-- ==================== ABA 1: REGISTRAR ATENDIMENTO ==================== -->
       <section id="tab-register" class="tab-panel space-y-5">
         <div class="glass-card rounded-3xl p-5 sm:p-6 border-2 border-softPink-200/80">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -200,8 +203,8 @@
               <h2 class="text-lg sm:text-xl font-extrabold text-brandBlue-900">Fale o atendimento realizado</h2>
               <p class="text-xs text-slate-600 mt-0.5">Ex: <em>"Atendi a Maria Silva no particular, valor 350 reais"</em> ou <em>"João Souza convênio 180"</em></p>
             </div>
-            <button type="button" id="btn-record-voice" onclick="toggleVoiceRecording()" class="shrink-0 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-softPink-500 to-brandBlue-600 hover:from-softPink-600 hover:to-brandBlue-700 text-white font-bold text-sm shadow-lg shadow-softPink-500/25 transition">
-              <svg id="mic-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <button type="button" id="btn-record-voice" onclick="toggleVoiceRecording('register')" class="shrink-0 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-softPink-500 to-brandBlue-600 hover:from-softPink-600 hover:to-brandBlue-700 text-white font-bold text-sm shadow-lg shadow-softPink-500/25 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
               <span id="btn-record-label">Gravar Áudio</span>
@@ -341,8 +344,37 @@
         </div>
       </section>
 
-      <!-- ==================== ABA 3: HISTÓRICO DE ATENDIMENTOS ==================== -->
+      <!-- ==================== ABA 3: HISTÓRICO & AJUSTES COM IA (v2) ==================== -->
       <section id="tab-history" class="tab-panel hidden space-y-4">
+        
+        <!-- Card de Ajuste Inteligente por Voz/Texto (v2) -->
+        <div class="glass-card rounded-3xl p-4 sm:p-5 border-2 border-brandBlue-200/80 bg-gradient-to-r from-white to-brandBlue-50/50">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brandBlue-100 text-brandBlue-800 mb-1">
+                ✨ Ajuste Rápido com IA (Voz ou Texto)
+              </span>
+              <h3 class="text-sm sm:text-base font-extrabold text-brandBlue-900">Corrigir um atendimento falando ou digitando</h3>
+              <p class="text-xs text-slate-500">Ex: <em>"Mude o valor da Maria Silva para 400 reais"</em> ou <em>"Altere o João para convênio"</em></p>
+            </div>
+            <button type="button" id="btn-edit-voice" onclick="toggleVoiceRecording('edit')" class="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-brandBlue-600 to-softPink-500 hover:from-brandBlue-700 hover:to-softPink-600 text-white font-bold text-xs sm:text-sm shadow-md transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+              <span id="btn-edit-voice-label">Falar Ajuste</span>
+            </button>
+          </div>
+
+          <div class="mt-3 flex flex-col sm:flex-row gap-2">
+            <input type="text" id="edit-voice-transcript" placeholder="Diga ou escreva o que deseja alterar..." class="flex-1 rounded-xl border border-brandBlue-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-brandBlue-500">
+            <button type="button" onclick="applyAIEditCommand()" class="px-4 py-2 rounded-xl bg-brandBlue-600 hover:bg-brandBlue-700 text-white font-bold text-xs sm:text-sm transition shrink-0">
+              Aplicar Ajuste IA
+            </button>
+          </div>
+          <p id="edit-ai-status" class="text-xs font-semibold text-brandBlue-700 mt-2 hidden"></p>
+        </div>
+
+        <!-- Filtros e Lista -->
         <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 class="text-base sm:text-lg font-extrabold text-brandBlue-900">Atendimentos Registrados</h2>
@@ -421,7 +453,6 @@
             </div>
           </div>
 
-          <!-- Integração com Banco de Dados (Google Sheets) -->
           <div class="border-t border-brandBlue-100 pt-5 space-y-4">
             <div>
               <h3 class="text-sm font-extrabold text-brandBlue-900">Conexão Nuvem & Motor de IA</h3>
@@ -440,6 +471,70 @@
         </form>
       </section>
     </main>
+  </div>
+
+  <!-- ==================== MODAL DE EDIÇÃO MANUAL (v2) ==================== -->
+  <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-brandBlue-900/50 backdrop-blur-sm">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-brandBlue-100 space-y-4">
+      <div class="flex items-center justify-between border-b border-brandBlue-100 pb-3">
+        <h3 class="text-lg font-extrabold text-brandBlue-900">Editar Atendimento</h3>
+        <button type="button" onclick="closeEditModal()" class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form onsubmit="submitManualEdit(event)" class="space-y-4">
+        <input type="hidden" id="edit-id" />
+        <div>
+          <label class="block text-xs font-bold text-brandBlue-900 mb-1">Nome do Paciente *</label>
+          <input type="text" id="edit-patient" required class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm font-medium">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-brandBlue-900 mb-1">Tipo *</label>
+            <select id="edit-type" class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm font-bold">
+              <option value="Particular">Particular</option>
+              <option value="Convênio">Convênio</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-brandBlue-900 mb-1">Valor (R$) *</label>
+            <input type="number" id="edit-amount" step="0.01" min="0" required class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm font-extrabold text-brandBlue-900">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-brandBlue-900 mb-1">Data *</label>
+            <input type="date" id="edit-date" required class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-brandBlue-900 mb-1">Status *</label>
+            <select id="edit-status" class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm font-bold">
+              <option value="Pendente">Pendente</option>
+              <option value="Recebido">Recebido</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-brandBlue-900 mb-1">Observação</label>
+          <input type="text" id="edit-notes" class="w-full rounded-xl border border-brandBlue-200 px-3.5 py-2.5 text-sm">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="submit" class="flex-1 py-3 rounded-2xl bg-brandBlue-600 hover:bg-brandBlue-700 text-white font-extrabold text-sm shadow-md transition">
+            Salvar Alterações
+          </button>
+          <button type="button" onclick="closeEditModal()" class="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Toast de Notificação -->
@@ -462,6 +557,7 @@
 
     let recognition = null;
     let isRecording = false;
+    let activeVoiceContext = "register"; // 'register' ou 'edit'
     let monthlyChart = null;
     let typeChart = null;
 
@@ -472,7 +568,6 @@
       try { localStorage.setItem(key, val); } catch (e) {}
     }
 
-    // Registra o Service Worker do PWA
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
@@ -586,55 +681,55 @@
     }
 
     async function syncFromCloud(showNotification = false) {
-  if (!rules.sheetUrl) {
-    setSyncStatus("offline", "Salvo no aparelho");
-    return;
-  }
-  setSyncStatus("loading", "Sincronizando...");
-  try {
-    const urlNoCache = rules.sheetUrl + (rules.sheetUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
-    const res = await fetch(urlNoCache);
-    const data = await res.json();
-    if (data && Array.isArray(data.appointments)) {
-      appointments = data.appointments;
+      if (!rules.sheetUrl) {
+        setSyncStatus("offline", "Salvo no aparelho");
+        return;
+      }
+      setSyncStatus("loading", "Sincronizando...");
+      try {
+        const urlNoCache = rules.sheetUrl + (rules.sheetUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
+        const res = await fetch(urlNoCache);
+        const data = await res.json();
+        if (data && Array.isArray(data.appointments)) {
+          appointments = data.appointments;
+        }
+        if (data && data.rules && (Number(data.rules.updatedAt || 0) >= Number(rules.updatedAt || 0))) {
+          const currentUrl = rules.sheetUrl;
+          rules = { ...rules, ...data.rules, sheetUrl: currentUrl };
+          applyRulesToForm();
+          recalculatePreview();
+        }
+        saveLocalCache();
+        refreshAllViews();
+        setSyncStatus("ok", "Online • Planilha Google");
+        if (showNotification) showToast("Dados sincronizados com a planilha!");
+      } catch (err) {
+        console.warn("Erro ao ler planilha:", err);
+        setSyncStatus("offline", "Modo offline (cache local)");
+        refreshAllViews();
+      }
     }
-    if (data && data.rules && (Number(data.rules.updatedAt || 0) >= Number(rules.updatedAt || 0))) {
-      const currentUrl = rules.sheetUrl;
-      rules = { ...rules, ...data.rules, sheetUrl: currentUrl };
-      applyRulesToForm();
-      recalculatePreview();
+
+    async function pushToCloud() {
+      rules.updatedAt = Date.now();
+      saveLocalCache();
+      if (!rules.sheetUrl) return;
+      setSyncStatus("loading", "Salvando na nuvem...");
+      try {
+        await fetch(rules.sheetUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ appointments, rules })
+        });
+        setSyncStatus("ok", "Online • Salvo na Planilha");
+      } catch (err) {
+        console.warn("Erro ao enviar para planilha:", err);
+        setSyncStatus("offline", "Salvo localmente");
+      }
     }
-    saveLocalCache();
-    refreshAllViews();
-    setSyncStatus("ok", "Online • Planilha Google");
-    if (showNotification) showToast("Dados sincronizados com a planilha!");
-  } catch (err) {
-    console.warn("Erro ao ler planilha:", err);
-    setSyncStatus("offline", "Modo offline (cache local)");
-    refreshAllViews();
-  }
-}
 
-async function pushToCloud() {
-  rules.updatedAt = Date.now();
-  saveLocalCache();
-  if (!rules.sheetUrl) return;
-  setSyncStatus("loading", "Salvando na nuvem...");
-  try {
-    await fetch(rules.sheetUrl, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ appointments, rules })
-    });
-    setSyncStatus("ok", "Online • Salvo na Planilha");
-  } catch (err) {
-    console.warn("Erro ao enviar para planilha:", err);
-    setSyncStatus("offline", "Salvo localmente");
-  }
-}
-
-    // ==================== VOZ & IA (SERVIDOR SEGURO) ====================
+    // ==================== VOZ & IA (CADASTRO E EDIÇÃO v2) ====================
     function setupSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) return;
@@ -646,9 +741,13 @@ async function pushToCloud() {
 
       recognition.onstart = () => {
         isRecording = true;
-        const btn = document.getElementById("btn-record-voice");
-        btn.classList.add("recording-pulse");
-        document.getElementById("btn-record-label").textContent = "Ouvindo... (Toque p/ parar)";
+        if (activeVoiceContext === "register") {
+          document.getElementById("btn-record-voice").classList.add("recording-pulse");
+          document.getElementById("btn-record-label").textContent = "Ouvindo... (Toque p/ parar)";
+        } else {
+          document.getElementById("btn-edit-voice").classList.add("recording-pulse");
+          document.getElementById("btn-edit-voice-label").textContent = "Ouvindo ajuste...";
+        }
       };
 
       recognition.onresult = (event) => {
@@ -656,16 +755,28 @@ async function pushToCloud() {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript;
         }
-        document.getElementById("voice-transcript").value = transcript;
+        if (activeVoiceContext === "register") {
+          document.getElementById("voice-transcript").value = transcript;
+        } else {
+          document.getElementById("edit-voice-transcript").value = transcript;
+        }
       };
 
       recognition.onend = () => {
         isRecording = false;
-        const btn = document.getElementById("btn-record-voice");
-        btn.classList.remove("recording-pulse");
+        document.getElementById("btn-record-voice").classList.remove("recording-pulse");
         document.getElementById("btn-record-label").textContent = "Gravar Áudio";
-        if (document.getElementById("voice-transcript").value.trim().length > 2) {
-          parseTranscriptWithAI();
+        document.getElementById("btn-edit-voice").classList.remove("recording-pulse");
+        document.getElementById("btn-edit-voice-label").textContent = "Falar Ajuste";
+
+        if (activeVoiceContext === "register") {
+          if (document.getElementById("voice-transcript").value.trim().length > 2) {
+            parseTranscriptWithAI();
+          }
+        } else {
+          if (document.getElementById("edit-voice-transcript").value.trim().length > 2) {
+            applyAIEditCommand();
+          }
         }
       };
 
@@ -673,20 +784,23 @@ async function pushToCloud() {
         isRecording = false;
         document.getElementById("btn-record-voice").classList.remove("recording-pulse");
         document.getElementById("btn-record-label").textContent = "Gravar Áudio";
-        showToast("Microfone indisponível. Digite o texto e clique em Preencher.");
+        document.getElementById("btn-edit-voice").classList.remove("recording-pulse");
+        document.getElementById("btn-edit-voice-label").textContent = "Falar Ajuste";
+        showToast("Microfone indisponível. Digite o texto na caixa.");
       };
     }
 
-    function toggleVoiceRecording() {
+    function toggleVoiceRecording(context = "register") {
       if (!recognition) {
-        showToast("Seu navegador não suporta ditado direto. Digite a frase na caixa abaixo.");
-        document.getElementById("voice-transcript").focus();
+        showToast("Seu navegador não suporta ditado direto. Digite a frase na caixa.");
         return;
       }
       if (isRecording) {
         recognition.stop();
       } else {
-        document.getElementById("voice-transcript").value = "";
+        activeVoiceContext = context;
+        if (context === "register") document.getElementById("voice-transcript").value = "";
+        else document.getElementById("edit-voice-transcript").value = "";
         recognition.start();
       }
     }
@@ -700,9 +814,8 @@ async function pushToCloud() {
 
       const statusEl = document.getElementById("ai-status-msg");
       statusEl.classList.remove("hidden");
-      statusEl.textContent = "Analisando frase com IA na nuvem...";
+      statusEl.textContent = "Analisando frase com IA...";
 
-      // Envia o texto para o Google Apps Script processar com a chave oculta no servidor
       if (rules.sheetUrl) {
         try {
           const response = await fetch(rules.sheetUrl, {
@@ -718,7 +831,7 @@ async function pushToCloud() {
             return;
           }
         } catch (err) {
-          console.warn("Usando interpretador local como reserva:", err);
+          console.warn("Fallback local no cadastro:", err);
         }
       }
 
@@ -727,6 +840,151 @@ async function pushToCloud() {
       statusEl.textContent = "✅ Campos preenchidos! Confira os dados e clique em Salvar.";
     }
 
+    // ==================== AJUSTE COM IA (v2) ====================
+    async function applyAIEditCommand() {
+      const text = document.getElementById("edit-voice-transcript").value.trim();
+      if (!text) {
+        showToast("Fale ou escreva o ajuste desejado.");
+        return;
+      }
+      if (appointments.length === 0) {
+        showToast("Não há atendimentos registrados para ajustar.");
+        return;
+      }
+
+      const statusEl = document.getElementById("edit-ai-status");
+      statusEl.classList.remove("hidden");
+      statusEl.textContent = "⏳ IA localizando atendimento e aplicando ajuste...";
+
+      let applied = false;
+
+      // 1. Tenta via IA Gemini no servidor
+      if (rules.sheetUrl) {
+        try {
+          const response = await fetch(rules.sheetUrl, {
+            method: "POST",
+            redirect: "follow",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "edit_voice", transcript: text, appointments })
+          });
+          const data = await response.json();
+          if (data && data.ok && data.edit && data.edit.targetId && data.edit.updates) {
+            const idx = appointments.findIndex(a => a.id === data.edit.targetId);
+            if (idx !== -1) {
+              applyUpdatesToAppointment(idx, data.edit.updates);
+              statusEl.textContent = `✨ Atendimento de ${appointments[idx].patientName} atualizado pela IA!`;
+              applied = true;
+            }
+          }
+        } catch (err) {
+          console.warn("Fallback local na edição:", err);
+        }
+      }
+
+      // 2. Fallback inteligente local se o CORS ou offline impedir resposta do POST
+      if (!applied) {
+        const localEdit = parseEditLocally(text);
+        if (localEdit && localEdit.idx !== -1) {
+          applyUpdatesToAppointment(localEdit.idx, localEdit.updates);
+          statusEl.textContent = `✅ Atendimento de ${appointments[localEdit.idx].patientName} atualizado!`;
+          applied = true;
+        } else {
+          statusEl.textContent = "⚠️ Não encontrei o paciente citado. Clique em 'Editar' no cartão abaixo.";
+          return;
+        }
+      }
+
+      document.getElementById("edit-voice-transcript").value = "";
+      refreshAllViews();
+      await pushToCloud();
+    }
+
+    function parseEditLocally(text) {
+      const lower = text.toLowerCase();
+      // Procura qual paciente cadastrado está mencionado na frase
+      let foundIdx = -1;
+      for (let i = 0; i < appointments.length; i++) {
+        const pName = (appointments[i].patientName || "").toLowerCase();
+        const firstName = pName.split(" ")[0];
+        if ((pName && lower.includes(pName)) || (firstName.length >= 3 && lower.includes(firstName))) {
+          foundIdx = i;
+          break;
+        }
+      }
+      if (foundIdx === -1) return null;
+
+      const updates = {};
+      const moneyMatch = text.match(/(?:para|valor|r\$)\s*(\d+(?:[.,]\d{1,2})?)/i) || text.match(/(\d+(?:[.,]\d{1,2})?)\s*reais/i);
+      if (moneyMatch) updates.amount = parseFloat(moneyMatch[1].replace(",", "."));
+
+      if (lower.includes("convênio") || lower.includes("convenio")) updates.type = "Convênio";
+      else if (lower.includes("particular")) updates.type = "Particular";
+
+      if (lower.includes("recebido") || lower.includes("pago")) updates.status = "Recebido";
+      else if (lower.includes("pendente")) updates.status = "Pendente";
+
+      return { idx: foundIdx, updates };
+    }
+
+    function applyUpdatesToAppointment(idx, updates) {
+      const item = appointments[idx];
+      if (updates.patientName) item.patientName = updates.patientName;
+      if (updates.type === "Particular" || updates.type === "Convênio") item.type = updates.type;
+      if (updates.amount !== null && updates.amount !== undefined && !isNaN(Number(updates.amount))) {
+        item.amount = Number(updates.amount);
+      }
+      if (updates.date && /^\d{4}-\d{2}-\d{2}$/.test(updates.date)) item.date = updates.date;
+      if (updates.notes !== null && updates.notes !== undefined) item.notes = updates.notes;
+      if (updates.status === "Pendente" || updates.status === "Recebido") item.status = updates.status;
+
+      // Recalcula comissão e mês de recebimento conforme regras vigentes
+      const pct = item.type === "Particular" ? Number(rules.particularPct) : Number(rules.convenioPct);
+      const offset = item.type === "Particular" ? Number(rules.particularMonths) : Number(rules.convenioMonths);
+      item.commissionPct = pct;
+      item.commission = Number(((item.amount * pct) / 100).toFixed(2));
+      item.payoutMonth = calculatePayoutMonth(item.date, offset);
+    }
+
+    // ==================== EDIÇÃO MANUAL (MODAL v2) ====================
+    function openEditModal(id) {
+      const item = appointments.find(a => a.id === id);
+      if (!item) return;
+      document.getElementById("edit-id").value = item.id;
+      document.getElementById("edit-patient").value = item.patientName;
+      document.getElementById("edit-type").value = item.type;
+      document.getElementById("edit-amount").value = item.amount;
+      document.getElementById("edit-date").value = item.date;
+      document.getElementById("edit-status").value = item.status;
+      document.getElementById("edit-notes").value = item.notes || "";
+      document.getElementById("edit-modal").classList.remove("hidden");
+    }
+
+    function closeEditModal() {
+      document.getElementById("edit-modal").classList.add("hidden");
+    }
+
+    async function submitManualEdit(e) {
+      e.preventDefault();
+      const id = document.getElementById("edit-id").value;
+      const idx = appointments.findIndex(a => a.id === id);
+      if (idx === -1) return;
+
+      applyUpdatesToAppointment(idx, {
+        patientName: document.getElementById("edit-patient").value.trim(),
+        type: document.getElementById("edit-type").value,
+        amount: parseFloat(document.getElementById("edit-amount").value),
+        date: document.getElementById("edit-date").value,
+        status: document.getElementById("edit-status").value,
+        notes: document.getElementById("edit-notes").value.trim()
+      });
+
+      closeEditModal();
+      refreshAllViews();
+      showToast("Atendimento atualizado com sucesso!");
+      await pushToCloud();
+    }
+
+    // ==================== AUXILIARES DE CADASTRO ====================
     function parseTranscriptLocally(text) {
       const lower = text.toLowerCase();
       const type = (lower.includes("convênio") || lower.includes("convenio") || lower.includes("plano") || lower.includes("unimed") || lower.includes("amil") || lower.includes("bradesco") || lower.includes("sulamerica"))
@@ -766,7 +1024,6 @@ async function pushToCloud() {
       recalculatePreview();
     }
 
-    // ==================== CÁLCULOS ====================
     function setTodayDate() {
       const today = new Date();
       const yyyy = today.getFullYear();
@@ -886,7 +1143,7 @@ async function pushToCloud() {
       await pushToCloud();
     }
 
-    // ==================== ABAS ====================
+    // ==================== ABAS & VISUALIZAÇÃO ====================
     function switchTab(tabName) {
       document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
       document.getElementById(`tab-${tabName}`).classList.remove("hidden");
@@ -907,7 +1164,6 @@ async function pushToCloud() {
       renderHistory();
     }
 
-    // ==================== DASHBOARD ====================
     function populateMonthFilter() {
       const sel = document.getElementById("filter-payout-month");
       const current = sel.value;
@@ -997,7 +1253,6 @@ async function pushToCloud() {
       });
     }
 
-    // ==================== HISTÓRICO ====================
     function renderHistory() {
       const q = document.getElementById("search-patient").value.toLowerCase().trim();
       const fType = document.getElementById("filter-type").value;
@@ -1042,15 +1297,18 @@ async function pushToCloud() {
               </p>
             </div>
 
-            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-brandBlue-50">
+            <div class="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-brandBlue-50">
               <div class="text-left sm:text-right">
                 <span class="block text-[11px] text-slate-400">Bruto: ${formatBRL(a.amount)}</span>
                 <span class="text-base font-extrabold text-brandBlue-800">${formatBRL(a.commission)}</span>
               </div>
 
               <div class="flex items-center gap-1.5">
+                <button type="button" onclick="openEditModal('${a.id}')" title="Editar atendimento" class="px-3 py-1.5 rounded-xl bg-brandBlue-50 hover:bg-brandBlue-100 text-brandBlue-700 text-xs font-bold transition">
+                  Editar
+                </button>
                 <button type="button" onclick="toggleStatus('${a.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${isPaid ? "bg-amber-50 hover:bg-amber-100 text-amber-700" : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"}">
-                  ${isPaid ? "Marcar Pendente" : "Marcar Recebido"}
+                  ${isPaid ? "Pendente" : "Recebido"}
                 </button>
                 <button type="button" onclick="deleteAppointment('${a.id}')" title="Excluir" class="p-1.5 rounded-xl bg-softPink-50 hover:bg-softPink-100 text-softPink-600 transition">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
