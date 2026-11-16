@@ -586,59 +586,53 @@
     }
 
     async function syncFromCloud(showNotification = false) {
-      if (!rules.sheetUrl) {
-        setSyncStatus("offline", "Salvo no aparelho");
-        return;
-      }
-      setSyncStatus("loading", "Sincronizando...");
-      try {
-        const res = await fetch(rules.sheetUrl, { method: "GET", redirect: "follow" });
-        const data = await res.json();
-        if (data && Array.isArray(data.appointments)) {
-          appointments = data.appointments;
-        }
-        // Só aplica as regras da nuvem se forem mais recentes que as regras salvas localmente
-        if (data && data.rules && (Number(data.rules.updatedAt || 0) >= Number(rules.updatedAt || 0))) {
-          const currentUrl = rules.sheetUrl;
-          rules = { ...rules, ...data.rules, sheetUrl: currentUrl };
-          applyRulesToForm();
-          recalculatePreview();
-        }
-        saveLocalCache();
-        refreshAllViews();
-        setSyncStatus("ok", "Online • Planilha Google");
-        if (showNotification) showToast("Dados sincronizados com a planilha!");
-      } catch (err) {
-        console.warn("Erro ao ler planilha:", err);
-        setSyncStatus("offline", "Modo offline (cache local)");
-        refreshAllViews();
-        if (showNotification) showToast("Não foi possível conectar agora. Usando dados locais.");
-      }
+  if (!rules.sheetUrl) {
+    setSyncStatus("offline", "Salvo no aparelho");
+    return;
+  }
+  setSyncStatus("loading", "Sincronizando...");
+  try {
+    const urlNoCache = rules.sheetUrl + (rules.sheetUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
+    const res = await fetch(urlNoCache);
+    const data = await res.json();
+    if (data && Array.isArray(data.appointments)) {
+      appointments = data.appointments;
     }
+    if (data && data.rules && (Number(data.rules.updatedAt || 0) >= Number(rules.updatedAt || 0))) {
+      const currentUrl = rules.sheetUrl;
+      rules = { ...rules, ...data.rules, sheetUrl: currentUrl };
+      applyRulesToForm();
+      recalculatePreview();
+    }
+    saveLocalCache();
+    refreshAllViews();
+    setSyncStatus("ok", "Online • Planilha Google");
+    if (showNotification) showToast("Dados sincronizados com a planilha!");
+  } catch (err) {
+    console.warn("Erro ao ler planilha:", err);
+    setSyncStatus("offline", "Modo offline (cache local)");
+    refreshAllViews();
+  }
+}
 
-    async function pushToCloud() {
-      rules.updatedAt = Date.now();
-      saveLocalCache();
-      if (!rules.sheetUrl) return;
-      setSyncStatus("loading", "Salvando na nuvem...");
-      try {
-        const res = await fetch(rules.sheetUrl, {
-          method: "POST",
-          redirect: "follow",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ appointments, rules })
-        });
-        const data = await res.json();
-        if (data && data.ok) {
-          setSyncStatus("ok", "Online • Salvo na Planilha");
-        } else {
-          setSyncStatus("offline", "Erro ao confirmar nuvem");
-        }
-      } catch (err) {
-        console.warn("Erro ao enviar para planilha:", err);
-        setSyncStatus("offline", "Salvo localmente");
-      }
-    }
+async function pushToCloud() {
+  rules.updatedAt = Date.now();
+  saveLocalCache();
+  if (!rules.sheetUrl) return;
+  setSyncStatus("loading", "Salvando na nuvem...");
+  try {
+    await fetch(rules.sheetUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ appointments, rules })
+    });
+    setSyncStatus("ok", "Online • Salvo na Planilha");
+  } catch (err) {
+    console.warn("Erro ao enviar para planilha:", err);
+    setSyncStatus("offline", "Salvo localmente");
+  }
+}
 
     // ==================== VOZ & IA (SERVIDOR SEGURO) ====================
     function setupSpeechRecognition() {
